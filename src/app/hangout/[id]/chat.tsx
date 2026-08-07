@@ -1,0 +1,208 @@
+import { useEffect, useRef, useState } from 'react';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Camera, PaperPlaneTilt, Plus, Smiley, X } from 'phosphor-react-native';
+
+import { radii, space } from '@/theme/tokens';
+import { useApp, usePalette } from '@/store/useApp';
+import { photoUri, userById } from '@/data/seed';
+import { fmtTime, timeAgo } from '@/lib/format';
+import { Avatar } from '@/components/Avatar';
+import { Ty } from '@/components/Text';
+import { toast } from '@/components/Toast';
+
+export default function ChatScreen() {
+  const p = usePalette();
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
+  const sendMessage = useApp((s) => s.sendMessage);
+  const [text, setText] = useState('');
+  const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollToEnd({ animated: false });
+  }, [hangout?.messages.length]);
+
+  if (!hangout) {
+    return (
+      <View style={{ flex: 1, backgroundColor: p.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <Ty>Chat unavailable</Ty>
+      </View>
+    );
+  }
+
+  const send = () => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    sendMessage(hangout.id, trimmed);
+    setText('');
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
+  };
+
+  const addPhoto = () => {
+    const uri = photoUri(`chat-${Math.floor(Math.random() * 10000)}`);
+    // addPhoto exists on the store but the model only stores text messages;
+    // simulate by sending a photo message.
+    sendPhoto(uri);
+  };
+
+  const sendPhoto = (uri: string) => {
+    useApp.setState((s) => ({
+      hangouts: s.hangouts.map((h) =>
+        h.id === hangout.id
+          ? {
+              ...h,
+              messages: [
+                ...h.messages,
+                { id: `gen_${Date.now()}`, authorId: 'u_me', image: uri, at: Date.now(), kind: 'image' },
+              ],
+            }
+          : h
+      ),
+    }));
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: p.bg }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={0}
+    >
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: p.bg, paddingTop: insets.top }]}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.screen, paddingVertical: 10 }}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+            <X size={22} weight="bold" color={p.ink} />
+          </Pressable>
+          <View style={{ marginLeft: space.md }}>
+            <Ty variant="title3">{hangout.title}</Ty>
+            <Ty variant="caption" faint>
+              {hangout.participants.filter((pp) => pp.rsvp !== 'invited').length} in the chat
+            </Ty>
+          </View>
+        </View>
+      </View>
+
+      {/* Messages */}
+      <ScrollView
+        ref={scrollRef}
+        style={{ flex: 1 }}
+        contentContainerStyle={{ paddingHorizontal: space.screen, paddingVertical: space.lg, gap: 10 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {hangout.messages.map((m) => {
+          if (m.kind === 'system') {
+            return (
+              <View key={m.id} style={{ alignItems: 'center', marginVertical: 6 }}>
+                <View style={{ backgroundColor: p.surfaceAlt, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                  <Ty variant="caption" muted style={{ fontSize: 11 }}>
+                    {m.text}
+                  </Ty>
+                </View>
+              </View>
+            );
+          }
+          const author = userById(m.authorId);
+          const mine = m.authorId === 'u_me';
+          return (
+            <View
+              key={m.id}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'flex-end',
+                gap: 8,
+                justifyContent: mine ? 'flex-end' : 'flex-start',
+              }}
+            >
+              {!mine ? (
+                <Avatar name={author.name} color={author.color} initials={author.initials} size={30} />
+              ) : null}
+              <View style={{ maxWidth: '72%', alignItems: mine ? 'flex-end' : 'flex-start' }}>
+                {m.image ? (
+                  <Image
+                    source={{ uri: m.image }}
+                    style={{ width: 200, height: 150, borderRadius: radii.card, backgroundColor: p.surfaceAlt }}
+                  />
+                ) : (
+                  <View
+                    style={{
+                      backgroundColor: mine ? p.accent : p.surface,
+                      borderRadius: 18,
+                      borderTopRightRadius: mine ? 6 : 18,
+                      borderTopLeftRadius: mine ? 18 : 6,
+                      paddingHorizontal: 14,
+                      paddingVertical: 9,
+                      borderWidth: mine ? 0 : StyleSheet.hairlineWidth,
+                      borderColor: p.line,
+                    }}
+                  >
+                    <Ty variant="body" color={mine ? p.onAccent : p.ink}>
+                      {m.text}
+                    </Ty>
+                  </View>
+                )}
+                <Ty variant="caption" faint style={{ marginTop: 3, fontSize: 10 }}>
+                  {mine ? '' : `${author.name.split(' ')[0]} · `}
+                  {timeAgo(m.at)}
+                </Ty>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      {/* Composer */}
+      <View style={[styles.composerWrap, { backgroundColor: p.bg, paddingBottom: insets.bottom + 8 }]}>
+        <View style={[styles.composer, { backgroundColor: p.surface, borderColor: p.line }]}>
+          <Pressable onPress={addPhoto} hitSlop={6} style={{ padding: 6 }}>
+            <Camera size={22} weight="duotone" color={p.inkMuted} />
+          </Pressable>
+          <TextInput
+            value={text}
+            onChangeText={setText}
+            placeholder="Message the group"
+            placeholderTextColor={p.inkFaint}
+            style={{ flex: 1, color: p.ink, fontFamily: 'Sora_400Regular', fontSize: 15, maxHeight: 100 }}
+            multiline
+          />
+          <Pressable onPress={send} disabled={!text.trim()} hitSlop={6} style={{ padding: 6 }}>
+            <PaperPlaneTilt size={22} weight={text.trim() ? 'fill' : 'regular'} color={text.trim() ? p.accent : p.inkFaint} />
+          </Pressable>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+  },
+  composerWrap: {
+    paddingHorizontal: space.screen,
+    paddingTop: 8,
+  },
+  composer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    paddingHorizontal: space.md,
+    paddingVertical: 6,
+  },
+});
