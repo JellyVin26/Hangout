@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import {
   useFonts,
   Sora_400Regular,
