@@ -10,6 +10,7 @@ import type {
   CreateHangoutInput,
   Hangout,
   LiveSession,
+  Message,
   NotificationItem,
   Place,
   SharingMode,
@@ -22,9 +23,20 @@ import {
   apiHangoutToHangout,
   apiNotificationToNotification,
   apiFriendToUser,
+  apiMessageToMessage,
   type ApiHangout,
+  type ApiMessage,
   type ApiNotificationsResponse,
 } from '@/data/transform';
+
+/** Merge existing + fetched messages, dedupe by id, sort by time. */
+function mergeMessages(current: Message[], incoming: Message[]): Message[] {
+  const seen = new Set<string>();
+  return [...incoming, ...current]
+    .filter((m) => (seen.has(m.id) ? false : (seen.add(m.id), true)))
+    .sort((a, b) => a.at - b.at);
+}
+
 
 interface AppState {
   theme: 'light' | 'dark';
@@ -43,6 +55,7 @@ interface AppState {
   createHangout: (input: CreateHangoutInput) => Promise<string>;
   vote: (hangoutId: string, placeId: string) => Promise<void>;
   sendMessage: (hangoutId: string, text: string) => Promise<void>;
+  refreshMessages: (hangoutId: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
   setParticipantStatus: (hangoutId: string, userId: string, status: ArrivalStatus) => void;
 
@@ -182,27 +195,43 @@ export const useApp = create<AppState>()(
         }));
       },
       sendMessage: async (hangoutId, text) => {
-        // Optimistic update
-        const tempId = uid();
-        set((s) => ({
-          hangouts: s.hangouts.map((h) =>
-            h.id === hangoutId
-              ? {
-                  ...h,
-                  messages: [
-                    ...h.messages,
-                    { id: tempId, authorId: get().user?.id ?? 'me', text, at: Date.now(), kind: 'text' as const },
-                  ],
-                }
-              : h
-          ),
-        }));
-        try {
-          await api(`/hangouts/${hangoutId}/messages`, { method: 'POST', body: { body: text } });
-        } catch {
-          // mark as failed? for now leave optimistic message
-        }
-      },
+              // Optimistic update
+              const tempId = uid();
+              set((s) => ({
+                hangouts: s.hangouts.map((h) =>
+                  h.id === hangoutId
+                    ? {
+                        ...h,
+                        messages: [
+                          ...h.messages,
+                          { id: tempId, authorId: get().user?.id ?? 'me', text, at: Date.now(), kind: 'text' as const },
+                        ],
+                      }
+                    : h
+                ),
+              }));
+              try {
+                await api(`/hangouts/${hangoutId}/messages`, { method: 'POST', body: { body: text } });
+              } catch {
+                // mark as failed? for now leave optimistic message
+              }
+            },
+            refreshMessages: async (hangoutId) => {
+              try {
+                const res = (await api(`/hangouts/${hangoutId}/messages`)) as { data?: ApiMessage[] } | ApiMessage[];
+                const list = Array.isArray(res) ? res : (res as any).data ?? [];
+                const mapped = (list as ApiMessage[]).map(apiMessageToMessage);
+                set((s) => ({
+                  hangouts: s.hangouts.map((h) =>
+                    h.id === hangoutId
+                      ? { ...h, messages: mergeMessages(h.messages, mapped) }
+                      : h
+                  ),
+                }));
+              } catch {
+                // network error — keep local state
+              }
+            },
       addPhoto: (hangoutId, uri) => {
         set((s) => ({
           hangouts: s.hangouts.map((h) =>

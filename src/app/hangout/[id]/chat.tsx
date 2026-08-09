@@ -28,6 +28,7 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
   const sendMessage = useApp((s) => s.sendMessage);
+  const refreshMessages = useApp((s) => s.refreshMessages);
   const friendsList = useApp((s) => s.friends);
   const currentUser = useApp((s) => s.user);
   const userById = (uid: string) => {
@@ -38,10 +39,18 @@ export default function ChatScreen() {
   const scrollRef = useRef<ScrollView>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollToEnd({ animated: false });
-  }, [hangout?.messages.length]);
+      scrollRef.current?.scrollToEnd({ animated: false });
+    }, [hangout?.messages.length]);
 
-  if (!hangout) {
+    // Poll for new messages (real-time sync via REST — WS not available on serverless)
+    useEffect(() => {
+      if (!id) return;
+      const t = setInterval(() => refreshMessages(String(id)), 5000);
+      refreshMessages(String(id));
+      return () => clearInterval(t);
+    }, [id, refreshMessages]);
+
+    if (!hangout) {
     return (
       <View style={{ flex: 1, backgroundColor: p.bg, alignItems: 'center', justifyContent: 'center' }}>
         <Ty>Chat unavailable</Ty>

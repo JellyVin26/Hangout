@@ -79,6 +79,21 @@ export interface ApiMessage {
   createdAt: string;
 }
 
+export interface ApiMessage {
+  id: string;
+  hangoutId: string;
+  authorId: string;
+  body: string;
+  kind: string;
+  createdAt: string;
+  author?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string | null;
+  };
+}
+
 export interface ApiNotification {
   id: string;
   type: string; // FRIEND_JOINED | REMINDER | VOTE | ...
@@ -176,16 +191,6 @@ export function apiParticipantToParticipant(p: ApiParticipant): Participant {
   };
 }
 
-export function apiMessageToMessage(m: ApiMessage): Message {
-  return {
-    id: m.id,
-    authorId: m.authorId,
-    text: m.body,
-    at: new Date(m.createdAt).getTime(),
-    kind: m.kind === 'system' ? 'system' : 'text',
-  };
-}
-
 export function apiHangoutToHangout(h: ApiHangout): Hangout {
   const participants = h.participants.map(apiParticipantToParticipant);
   const hostIsParticipant = participants.some((p) => p.userId === h.hostId);
@@ -221,22 +226,34 @@ export function apiHangoutToHangout(h: ApiHangout): Hangout {
   };
 }
 
+export function apiMessageToMessage(m: ApiMessage): Message {
+  const kind = m.kind.toUpperCase();
+  return {
+    id: m.id,
+    authorId: m.authorId,
+    text: kind === 'TEXT' || kind === 'SYSTEM' ? m.body : undefined,
+    image: kind === 'IMAGE' ? m.body : undefined,
+    at: Date.parse(m.createdAt),
+    kind: kind === 'IMAGE' ? 'image' : kind === 'SYSTEM' ? 'system' : 'text',
+  };
+}
+
 export function apiNotificationToNotification(n: ApiNotification): NotificationItem {
-  const typeMap: Record<string, NotificationKind> = {
+  const kindMap: Record<string, NotificationKind> = {
     FRIEND_JOINED: 'friend_joined',
-    FRIEND_DECLINED: 'friend_declined',
     REMINDER: 'reminder',
     VOTE: 'vote',
-    LATE: 'late',
-    ARRIVED: 'arrived',
+    SYSTEM: 'system',
   };
+
   return {
     id: n.id,
-    kind: typeMap[n.type] ?? 'reminder',
-    read: n.read,
-    at: new Date(n.createdAt).getTime(),
-    title: n.title ?? '',
+    kind: kindMap[n.type] ?? 'system',
+    title: n.title ?? n.type.replace(/_/g, ' ').toLowerCase(),
     body: n.body ?? '',
+    at: Date.parse(n.createdAt),
+    read: n.read,
+    hangoutId: n.payload?.hangoutId,
   };
 }
 
