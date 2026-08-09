@@ -99,7 +99,7 @@ export default function ChatScreen() {
       {/* Header */}
       <View style={[styles.header, { backgroundColor: p.bg, paddingTop: insets.top }]}>
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: space.screen, paddingVertical: 10 }}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 4 }}>
+          <Pressable onPress={() => router.replace({ pathname: '/hangout/[id]', params: { id: String(id) } })} hitSlop={8} style={{ padding: 4 }}>
             <X size={22} weight="bold" color={p.ink} />
           </Pressable>
           <View style={{ marginLeft: space.md }}>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, ScrollView, View } from 'react-native';
+import { Image, Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Timer } from 'phosphor-react-native';
@@ -167,12 +167,16 @@ export default function HomeScreen() {
                     })}
                 />
                 {next.locationSharing ? (
-                  <View style={{ backgroundColor: p.accent, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                  <Pressable
+                    onPress={() => router.push(`/hangout/${next.id}/live`)}
+                    hitSlop={8}
+                    style={{ backgroundColor: p.accent, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 }}
+                  >
                     <Ph name="Navigation" size={13} weight="bold" color="#FFFFFF" />
                     <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
                       See live map
                     </Ty>
-                  </View>
+                  </Pressable>
                 ) : null}
               </View>
             </View>
@@ -181,7 +185,7 @@ export default function HomeScreen() {
       ) : null}
 
       {/* Category filter */}
-      <View style={{ marginBottom: space.xl }}>
+      <View style={{ paddingHorizontal: space.screen, marginBottom: space.xl }}>
         <ChipRow
           value={category}
           onChange={setCategory}
@@ -192,16 +196,15 @@ export default function HomeScreen() {
       {/* Trending */}
       <View style={{ paddingHorizontal: space.screen, marginBottom: space.xl }}>
         <SectionHeader title="Trending near you" />
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: space.md, paddingRight: space.screen }}
-          style={{ marginHorizontal: -space.screen }}
-        >
-          {trending.map((pl) => (
-            <PlaceCard key={pl.id} place={pl} compact onPress={() => router.push(`/place/${pl.id}`)} />
-          ))}
-        </ScrollView>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: space.md }}
+                >
+                  {trending.map((pl) => (
+                    <PlaceCard key={pl.id} place={pl} compact onPress={() => router.push(`/place/${pl.id}`)} />
+                  ))}
+                </ScrollView>
       </View>
 
       {/* Nearby hangouts */}
@@ -264,32 +267,31 @@ export default function HomeScreen() {
           onAction={() => router.push('/badges')}
         />
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: space.md, paddingRight: space.screen }}
-          style={{ marginHorizontal: -space.screen }}
-        >
-          {badges.map((b) => (
-            <View key={b.id} style={{ alignItems: 'center', gap: 6, width: 76 }}>
-              <View
-                style={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 20,
-                  backgroundColor: b.earned ? b.color : p.surfaceAlt,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  opacity: b.earned ? 1 : 0.55,
-                }}
-              >
-                <Ph name={b.icon as PhIconName} size={26} weight={b.earned ? 'fill' : 'regular'} color={b.earned ? '#FFFFFF' : p.inkFaint} />
-              </View>
-              <Ty variant="caption" color={b.earned ? p.ink : p.inkFaint} style={{ textAlign: 'center', fontSize: 10 }}>
-                {b.name}
-              </Ty>
-            </View>
-          ))}
-        </ScrollView>
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 10 }}
+                >
+                  {badges.map((b) => (
+                    <View key={b.id} style={{ alignItems: 'center', gap: 6, width: 62 }}>
+                      <View
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 17,
+                          backgroundColor: b.earned ? b.color : p.surfaceAlt,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          opacity: b.earned ? 1 : 0.55,
+                        }}
+                      >
+                        <Ph name={b.icon as PhIconName} size={22} weight={b.earned ? 'fill' : 'regular'} color={b.earned ? '#FFFFFF' : p.inkFaint} />
+                      </View>
+                      <Ty variant="caption" color={b.earned ? p.ink : p.inkFaint} style={{ textAlign: 'center', fontSize: 10 }}>
+                        {b.name}
+                      </Ty>
+                    </View>
+                  ))}
+                </ScrollView>
       </View>
     </Screen>
   );

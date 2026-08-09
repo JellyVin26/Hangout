@@ -84,7 +84,7 @@ export default function LiveScreen() {
     <View style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: p.bg }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={{ padding: 6 }}>
+        <Pressable onPress={() => router.replace('/')} hitSlop={8} style={{ padding: 6 }}>
           <X size={22} weight="bold" color={p.ink} />
         </Pressable>
         <View style={{ flex: 1, alignItems: 'center' }}>

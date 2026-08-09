@@ -55,8 +55,8 @@ export function ChipRow({
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: 8, paddingHorizontal: space.screen }}
-      style={{ marginHorizontal: -space.screen }}
+      contentContainerStyle={{ gap: 8 }}
+      style={{ flexGrow: 0 }}
     >
       {options.map((o) => (
         <Chip

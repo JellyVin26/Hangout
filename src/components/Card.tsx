@@ -75,14 +75,14 @@ export function PlaceCard({
       onPress={onPress}
       padded={false}
       style={[
-        { overflow: 'hidden', width: compact ? 200 : undefined },
+        { overflow: 'hidden', width: compact ? 164 : undefined },
         selected && { borderColor: p.accent, borderWidth: 2 },
       ]}
     >
       <View style={{ position: 'relative' }}>
         <Image
           source={{ uri: place.photo }}
-          style={{ width: '100%', height: compact ? 110 : 140, backgroundColor: p.surfaceAlt }}
+          style={{ width: '100%', height: compact ? 96 : 140, backgroundColor: p.surfaceAlt }}
         />
         <View
           style={{
