@@ -5,7 +5,6 @@ import { Check, QrCode, ShieldCheck, SignOut, Moon, Sun, MapPin, CalendarCheck, 
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { FRIENDS, userById } from '@/data/seed';
 import { Avatar } from '@/components/Avatar';
 import { Card } from '@/components/Card';
 import { Screen, ListRow, SectionHeader } from '@/components/Screen';
@@ -18,12 +17,14 @@ export default function ProfileScreen() {
   const user = useApp((s) => s.user)!;
   const badges = useApp((s) => s.badges);
   const signOut = useApp((s) => s.signOut);
+  const friendsList = useApp((s) => s.friends);
+  const userById = (uid: string) => friendsList.find((u) => u.id === uid) ?? user;
   const { theme, toggleTheme } = useAppTheme();
   const [showQr, setShowQr] = useState(false);
 
   const friends = user.friendIds
     .map((id) => userById(id))
-    .filter((u) => FRIENDS.some((f) => f.id === u.id));
+    .filter((u) => friendsList.some((f) => f.id === u.id));
   const earned = badges.filter((b) => b.earned);
 
   return (

@@ -4,9 +4,8 @@ import { useRouter } from 'expo-router';
 import { Check, MagnifyingGlass } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
-import { usePalette } from '@/store/useApp';
+import { useApp, usePalette } from '@/store/useApp';
 import { useDraft } from '@/store/useDraft';
-import { FRIENDS } from '@/data/seed';
 import { Screen } from '@/components/Screen';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -17,9 +16,10 @@ export default function InviteScreen() {
   const p = usePalette();
   const router = useRouter();
   const draft = useDraft();
+  const friends = useApp((s) => s.friends);
   const [query, setQuery] = useState('');
 
-  const filtered = FRIENDS.filter((f) => {
+  const filtered = friends.filter((f) => {
     const q = query.trim().toLowerCase();
     return !q || f.name.toLowerCase().includes(q) || f.username.toLowerCase().includes(q);
   });

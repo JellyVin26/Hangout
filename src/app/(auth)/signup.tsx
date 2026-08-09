@@ -12,19 +12,28 @@ import { Ty } from '@/components/Text';
 export default function SignUpScreen() {
   const p = usePalette();
   const router = useRouter();
-  const signIn = useApp((s) => s.signIn);
+  const signUp = useApp((s) => s.signUp);
+  const loading = useApp((s) => s.loading);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [authError, setAuthError] = useState('');
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (name.trim().length < 2) e.name = 'Tell us your name';
     if (!/^\S+@\S+\.\S+$/.test(email)) e.email = 'Enter a valid email';
     if (password.length < 6) e.password = 'At least 6 characters';
     setErrors(e);
-    if (Object.keys(e).length === 0) signIn();
+    setAuthError('');
+    if (Object.keys(e).length === 0) {
+      try {
+        await signUp(name, email, password);
+      } catch (err: any) {
+        setAuthError(err?.message || 'Registration failed');
+      }
+    }
   };
 
   return (

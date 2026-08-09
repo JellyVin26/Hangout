@@ -15,19 +15,34 @@ import type {
   SharingMode,
   User,
 } from '@/data/types';
+import { api, setToken, ApiError } from '@/lib/api';
+import {
+  apiUserToUser,
+  apiPlaceToPlace,
+  apiHangoutToHangout,
+  apiNotificationToNotification,
+  apiFriendToUser,
+  type ApiHangout,
+  type ApiNotificationsResponse,
+} from '@/data/transform';
 
 interface AppState {
   theme: 'light' | 'dark';
   toggleTheme: () => void;
 
   user: User | null;
-  signIn: () => void;
-  signOut: () => void;
+  signIn: (email?: string, password?: string) => Promise<void>;
+  signUp: (name: string, email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  bootstrap: () => Promise<void>;
+
+  loading: boolean;
+  error: string | null;
 
   hangouts: Hangout[];
-  createHangout: (input: CreateHangoutInput) => string;
-  vote: (hangoutId: string, placeId: string) => void;
-  sendMessage: (hangoutId: string, text: string) => void;
+  createHangout: (input: CreateHangoutInput) => Promise<string>;
+  vote: (hangoutId: string, placeId: string) => Promise<void>;
+  sendMessage: (hangoutId: string, text: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
   setParticipantStatus: (hangoutId: string, userId: string, status: ArrivalStatus) => void;
 
@@ -36,11 +51,13 @@ interface AppState {
   setSharing: (hangoutId: string, mode: SharingMode) => void;
 
   notifications: NotificationItem[];
-  markAllRead: () => void;
+  unreadCount: number;
+  markAllRead: () => Promise<void>;
   pushNotification: (n: Omit<NotificationItem, 'id' | 'at' | 'read'>) => void;
 
   badges: Badge[];
   places: Place[];
+  friends: User[];
 }
 
 let idCounter = 100;
@@ -56,87 +73,117 @@ export const useApp = create<AppState>()(
       toggleTheme: () => set((s) => ({ theme: s.theme === 'light' ? 'dark' : 'light' })),
 
       user: null,
-      signIn: () => set({ user: { ...ME } }),
-      signOut: () => set({ user: null }),
+      loading: false,
+      error: null,
+
+      signIn: async (email?: string, password?: string) => {
+        set({ loading: true, error: null });
+        try {
+          // If no credentials, use demo account
+          const creds = email && password
+            ? { email, password }
+            : { email: 'maya@hangout.app', password: 'password123' };
+          const res = await api<{ token: string; user: any }>('/auth/login', {
+            method: 'POST',
+            body: creds,
+            token: null, // no token for login
+          });
+          await setToken(res.token);
+          set({ user: apiUserToUser(res.user), loading: false });
+          await get().bootstrap();
+        } catch (e) {
+          set({ loading: false, error: e instanceof ApiError ? e.message : 'Login failed' });
+          throw e;
+        }
+      },
+
+      signUp: async (name: string, email: string, password: string) => {
+        set({ loading: true, error: null });
+        try {
+          const res = await api<{ token: string; user: any }>('/auth/register', {
+            method: 'POST',
+            body: { email, password, username: email.split('@')[0], displayName: name },
+            token: null,
+          });
+          await setToken(res.token);
+          set({ user: apiUserToUser(res.user), loading: false });
+          await get().bootstrap();
+        } catch (e) {
+          set({ loading: false, error: e instanceof ApiError ? e.message : 'Registration failed' });
+          throw e;
+        }
+      },
+
+      signOut: async () => {
+        await setToken(null);
+        set({ user: null, hangouts: [], places: [], friends: [], notifications: [], unreadCount: 0 });
+      },
+
+      bootstrap: async () => {
+        set({ loading: true, error: null });
+        try {
+          const [profile, hangouts, placesRes, friendsRes, notifRes] = await Promise.all([
+            api<any>('/auth/me'),
+            api<ApiHangout[]>('/hangouts'),
+            api<any[]>('/places'),
+            api<any[]>('/friends'),
+            api<ApiNotificationsResponse>('/notifications'),
+          ]);
+
+          set({
+            user: apiUserToUser(profile),
+            hangouts: hangouts.map(apiHangoutToHangout),
+            places: placesRes.map((p, i) => apiPlaceToPlace(p, i)),
+            friends: friendsRes.map(apiFriendToUser),
+            notifications: notifRes.items?.map(apiNotificationToNotification) ?? [],
+            unreadCount: notifRes.unreadCount ?? 0,
+            loading: false,
+          });
+        } catch (e) {
+          set({ loading: false, error: e instanceof ApiError ? e.message : 'Failed to load data' });
+        }
+      },
 
       hangouts: SEED_HANGOUTS,
-      createHangout: (input) => {
-        const id = uid();
-        const hangout: Hangout = {
-          id,
-          title: input.title,
-          description: input.description,
-          at: input.at,
-          durationMin: input.durationMin,
-          category: input.category,
-          visibility: input.visibility,
-          maxParticipants: input.maxParticipants,
-          hostId: 'u_me',
-          status: input.candidates.length > 1 ? 'voting' : 'confirmed',
-          destinationId: input.candidates.length === 1 ? input.candidates[0] : undefined,
-          candidates: input.candidates,
-          votes: {},
-          participants: [
-            { userId: 'u_me', role: 'host', rsvp: 'going', status: 'idle' },
-            ...input.inviteeIds.map((uid_) => ({
-              userId: uid_,
-              role: 'member' as const,
-              rsvp: 'invited' as const,
-              status: 'idle' as const,
-            })),
-          ],
-          messages: [
-            {
-              id: uid(),
-              authorId: 'system',
-              text: `${input.title} is on the calendar`,
-              at: Date.now(),
-              kind: 'system',
+            createHangout: async (input) => {
+              const startsAt = new Date(input.at).toISOString();
+              const visMap: Record<string, string> = {
+                private: 'PRIVATE',
+                friends: 'FRIENDS_ONLY',
+                public: 'PUBLIC',
+              };
+              const res = await api<ApiHangout>('/hangouts', {
+                method: 'POST',
+                body: {
+                  title: input.title,
+                  description: input.description,
+                  startsAt,
+                  destinationId: input.candidates[0],
+                  visibility: visMap[input.visibility] ?? 'PRIVATE',
+                  category: input.category,
+                  maxParticipants: input.maxParticipants,
+                  inviteUserIds: input.inviteeIds,
+                },
+              });
+              const hangout = apiHangoutToHangout(res);
+              set((s) => ({ hangouts: [hangout, ...s.hangouts] }));
+              return hangout.id;
             },
-          ],
-          photos: [],
-          createdAt: Date.now(),
-          locationSharing: false,
-        };
-        set((s) => ({ hangouts: [hangout, ...s.hangouts] }));
-        return id;
-      },
-      vote: (hangoutId, placeId) => {
+            vote: async (hangoutId, placeId) => {
+        await api(`/hangouts/${hangoutId}/vote`, { method: 'POST', body: { placeId } });
+        // Optimistic: update local state
         set((s) => ({
           hangouts: s.hangouts.map((h) => {
             if (h.id !== hangoutId) return h;
             const votes = { ...h.votes };
-            Object.keys(votes).forEach((k) => {
-              votes[k] = votes[k].filter((u) => u !== 'u_me');
-            });
-            const list = votes[placeId] ?? [];
-            votes[placeId] = [...list, 'u_me'];
-            // Auto-resolve when a candidate reaches a majority of going participants
-            const going = h.participants.filter((p) => p.rsvp !== 'invited').length;
-            const resolved = Object.entries(votes).find(([, users]) => users.length * 2 >= going);
-            if (resolved) {
-              return {
-                ...h,
-                votes,
-                status: 'confirmed' as const,
-                destinationId: resolved[0],
-                messages: [
-                  ...h.messages,
-                  {
-                    id: uid(),
-                    authorId: 'system',
-                    text: `Destination locked: ${resolved[0]}`,
-                    at: Date.now(),
-                    kind: 'system',
-                  },
-                ],
-              };
-            }
-            return { ...h, votes };
+            votes[placeId] = [...(votes[placeId] ?? []), 'u_me'];
+            return { ...h, votes, destinationId: placeId, status: 'confirmed' };
           }),
         }));
       },
-      sendMessage: (hangoutId, text) => {
+      sendMessage: async (hangoutId, text) => {
+        // Optimistic update
+        const tempId = uid();
         set((s) => ({
           hangouts: s.hangouts.map((h) =>
             h.id === hangoutId
@@ -144,12 +191,17 @@ export const useApp = create<AppState>()(
                   ...h,
                   messages: [
                     ...h.messages,
-                    { id: uid(), authorId: 'u_me', text, at: Date.now(), kind: 'text' },
+                    { id: tempId, authorId: get().user?.id ?? 'me', text, at: Date.now(), kind: 'text' as const },
                   ],
                 }
               : h
           ),
         }));
+        try {
+          await api(`/hangouts/${hangoutId}/messages`, { method: 'POST', body: { body: text } });
+        } catch {
+          // mark as failed? for now leave optimistic message
+        }
       },
       addPhoto: (hangoutId, uri) => {
         set((s) => ({
@@ -159,7 +211,7 @@ export const useApp = create<AppState>()(
                   ...h,
                   photos: [
                     ...h.photos,
-                    { id: uid(), uri, by: 'u_me', at: Date.now(), likes: 0 },
+                    { id: uid(), uri, by: get().user?.id ?? 'me', at: Date.now(), likes: 0 },
                   ],
                 }
               : h
@@ -209,8 +261,18 @@ export const useApp = create<AppState>()(
       },
 
       notifications: SEED_NOTIFICATIONS,
-      markAllRead: () =>
-        set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, read: true })) })),
+      unreadCount: 0,
+      markAllRead: async () => {
+        set((s) => ({
+          notifications: s.notifications.map((n) => ({ ...n, read: true })),
+          unreadCount: 0,
+        }));
+        try {
+          await api('/notifications/read-all', { method: 'POST' });
+        } catch {
+          /* offline ok */
+        }
+      },
       pushNotification: (n) =>
         set((s) => ({
           notifications: [
@@ -226,6 +288,7 @@ export const useApp = create<AppState>()(
 
       badges: SEED_BADGES,
       places: [],
+      friends: [],
     }),
     {
       name: 'hangout-storage',
@@ -249,4 +312,26 @@ export const usePalette = () => {
 
 export function useLiveSession(hangoutId: string): LiveSession | undefined {
   return useApp((s) => s.live[hangoutId]);
+}
+
+/** Look up a user by id across self + friends + hangout participants. */
+export function useUserById(id: string): User | undefined {
+  const user = useApp((s) => s.user);
+  const friends = useApp((s) => s.friends);
+  const hangouts = useApp((s) => s.hangouts);
+  if (user?.id === id) return user;
+  const f = friends.find((x) => x.id === id);
+  if (f) return f;
+  // Search participants inside hangouts (denormalized enough for avatars)
+  const pa = hangouts
+    .flatMap((h) => h.participants.map((p) => p.userId))
+    .find((uid) => uid === id);
+  void pa;
+  return undefined;
+}
+
+export function usePlaceById(id?: string): Place | undefined {
+  const places = useApp((s) => s.places);
+  if (!id) return undefined;
+  return places.find((pl) => pl.id === id);
 }

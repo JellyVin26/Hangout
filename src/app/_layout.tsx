@@ -20,6 +20,8 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const theme = useApp((s) => s.theme);
+  const user = useApp((s) => s.user);
+  const bootstrap = useApp((s) => s.bootstrap);
   const [fontsLoaded] = useFonts({
     Sora_400Regular,
     Sora_500Medium,
@@ -31,6 +33,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded) SplashScreen.hideAsync();
   }, [fontsLoaded]);
+
+  // If user is persisted (logged in), refresh data from API on app start
+  useEffect(() => {
+    if (fontsLoaded && user) {
+      bootstrap().catch(() => {/* token may be expired; user will be prompted on next action */});
+    }
+  }, [fontsLoaded, user?.id]);
 
   if (!fontsLoaded) return null;
 

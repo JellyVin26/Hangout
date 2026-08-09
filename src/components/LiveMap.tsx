@@ -3,8 +3,7 @@ import { Animated, LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 import { MapPin, NavigationArrow } from 'phosphor-react-native';
 import { radii, space } from '@/theme/tokens';
-import { usePalette } from '@/store/useApp';
-import { userById } from '@/data/seed';
+import { useApp, usePalette } from '@/store/useApp';
 import type { LiveSession, LiveTraveler, SharingMode } from '@/data/types';
 import { Ty } from './Text';
 
@@ -268,6 +267,12 @@ function TravelerBadge({
 }) {
   const p = usePalette();
   const isMeT = isMe ?? false;
+  const friends = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
+  const userById = (id: string) => {
+    if (currentUser?.id === id) return currentUser;
+    return friends.find((u) => u.id === id) ?? { id, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+  };
   const user = isMeT ? userById('u_me') : userById(userId);
   const pv = progressOf(traveler as { startedAt: number; totalSec: number; status?: string }, nowMs);
   const pos = bezierPoint(traveler.from, traveler.control, session.destination.map, pv);

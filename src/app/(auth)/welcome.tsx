@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,18 @@ export default function WelcomeScreen() {
   const p = usePalette();
   const router = useRouter();
   const signIn = useApp((s) => s.signIn);
+  const [loading, setLoading] = useState(false);
+
+  const demoLogin = async () => {
+    setLoading(true);
+    try {
+      await signIn();
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: p.bg }}>
@@ -71,22 +84,22 @@ export default function WelcomeScreen() {
 
         <View style={{ gap: space.md, marginTop: space.xl }}>
           <Button
-            label="Continue with Google"
+            label={loading ? 'Connecting…' : 'Continue with Google'}
             icon="GoogleLogo"
             iconWeight="fill"
             variant="outline"
             size="lg"
             fullWidth
-            onPress={() => signIn()}
+            onPress={demoLogin}
           />
           <Button
-            label="Continue with Apple"
+            label={loading ? 'Connecting…' : 'Continue with Apple'}
             icon="AppleLogo"
             iconWeight="fill"
             variant="dark"
             size="lg"
             fullWidth
-            onPress={() => signIn()}
+            onPress={demoLogin}
           />
           <Pressable
             onPress={() => {

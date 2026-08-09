@@ -6,8 +6,7 @@ import { Timer } from 'phosphor-react-native';
 
 import { space, radii } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { PLACES, placeById, userById } from '@/data/seed';
-import { CATEGORIES } from '@/data/types';
+import { CATEGORIES, type User } from '@/data/types';
 import { countdown, fmtDay, fmtTime } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { BrandMark } from '@/components/BrandMark';
@@ -19,15 +18,38 @@ import { IconButton } from '@/components/Button';
 import { Ty } from '@/components/Text';
 import { Ph, type PhIconName } from '@/components/icons';
 
+const FALLBACK_USER: User = {
+  id: 'me',
+  name: 'You',
+  username: 'you',
+  color: '#F0522F',
+  initials: 'Y',
+  interests: [],
+  badgeIds: [],
+  hangoutCount: 0,
+  placeCount: 0,
+  friendIds: [],
+};
+
 export default function HomeScreen() {
   const p = usePalette();
   const router = useRouter();
   const now = useNow(30000);
-  const user = useApp((s) => s.user)!;
+  const user = useApp((s) => s.user);
   const hangouts = useApp((s) => s.hangouts);
   const badges = useApp((s) => s.badges);
+  const places = useApp((s) => s.places);
+  const friends = useApp((s) => s.friends);
   const unread = useApp((s) => s.notifications.some((n) => !n.read));
   const [category, setCategory] = useState('All');
+
+  const me = user ?? FALLBACK_USER;
+
+  const userById = (id: string): User => {
+    if (me.id === id) return me;
+    return friends.find((f) => f.id === id) ?? FALLBACK_USER;
+  };
+  const placeById = (id?: string) => (id ? places.find((pl) => pl.id === id) : undefined);
 
   const upcoming = hangouts
     .filter((h) => h.status !== 'archived' && h.at > now - 30 * 60000)
@@ -35,7 +57,8 @@ export default function HomeScreen() {
   const next = upcoming[0];
   const nextPlace = next ? placeById(next.destinationId) : undefined;
 
-  const trending = PLACES.filter((pl) => category === 'All' || pl.category === category)
+  const trending = places
+    .filter((pl) => category === 'All' || pl.category === category)
     .sort((a, b) => b.rating - a.rating)
     .slice(0, 8);
 
@@ -74,12 +97,12 @@ export default function HomeScreen() {
             />
           ) : null}
         </View>
-        <Avatar name={user.name} color={user.color} initials={user.initials} size={38} style={{ marginLeft: space.sm }} />
+        <Avatar name={me.name} color={me.color} initials={me.initials} size={38} style={{ marginLeft: space.sm }} />
       </View>
 
       {/* Greeting */}
       <View style={{ paddingHorizontal: space.screen, marginBottom: space.lg }}>
-        <Ty variant="title1">{greeting}, {user.name.split(' ')[0]}</Ty>
+        <Ty variant="title1">{greeting}, {me.name.split(' ')[0]}</Ty>
         <Ty variant="bodySmall" muted style={{ marginTop: 2 }}>
           {upcoming.length} hangout{upcoming.length === 1 ? '' : 's'} coming up
         </Ty>

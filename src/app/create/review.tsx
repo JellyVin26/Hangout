@@ -3,11 +3,10 @@ import { useRouter } from 'expo-router';
 import { CalendarBlank, Clock, MapPin, Users } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
-import { usePalette } from '@/store/useApp';
+import { useApp, usePalette } from '@/store/useApp';
 import { useDraft } from '@/store/useDraft';
-import { useApp } from '@/store/useApp';
-import { PLACES, userById } from '@/data/seed';
 import { fmtDay, fmtTime, fmtDuration } from '@/lib/format';
+import type { Place } from '@/data/types';
 import { Screen } from '@/components/Screen';
 import { Card } from '@/components/Card';
 import { AvatarStack } from '@/components/Avatar';
@@ -21,11 +20,15 @@ export default function ReviewScreen() {
   const router = useRouter();
   const draft = useDraft();
   const createHangout = useApp((s) => s.createHangout);
-  const candidates = draft.candidateIds.map((cid) => PLACES.find((pl) => pl.id === cid)!).filter(Boolean);
+  const places = useApp((s) => s.places);
+  const friendsList = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
+  const candidates = draft.candidateIds.map((cid) => places.find((pl) => pl.id === cid)).filter(Boolean) as Place[];
+  const userById = (uid: string) => friendsList.find((u) => u.id === uid) ?? currentUser!;
   const invitees = draft.inviteeIds.map((id) => userById(id));
 
-  const create = () => {
-    const id = createHangout({
+  const create = async () => {
+    const id = await createHangout({
       title: draft.title.trim(),
       description: draft.description.trim() || undefined,
       at: draft.at,

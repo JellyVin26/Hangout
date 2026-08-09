@@ -4,9 +4,8 @@ import { useRouter } from 'expo-router';
 import { Check, MagnifyingGlass, Star } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
-import { usePalette } from '@/store/useApp';
+import { useApp, usePalette } from '@/store/useApp';
 import { useDraft } from '@/store/useDraft';
-import { PLACES } from '@/data/seed';
 import { CATEGORIES } from '@/data/types';
 import { Screen } from '@/components/Screen';
 import { ChipRow } from '@/components/Chip';
@@ -19,10 +18,11 @@ export default function PlacePickerScreen() {
   const p = usePalette();
   const router = useRouter();
   const draft = useDraft();
+  const places = useApp((s) => s.places);
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('All');
 
-  const filtered = PLACES.filter((pl) => {
+  const filtered = places.filter((pl) => {
     const matchCat = cat === 'All' || pl.category === cat;
     const q = query.trim().toLowerCase();
     const matchQuery =

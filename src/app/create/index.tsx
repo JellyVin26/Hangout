@@ -4,9 +4,8 @@ import { useRouter } from 'expo-router';
 import { CalendarBlank, Clock, MapPin, Users } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
-import { usePalette } from '@/store/useApp';
+import { usePalette, useApp } from '@/store/useApp';
 import { useDraft } from '@/store/useDraft';
-import { PLACES } from '@/data/seed';
 import { CATEGORIES, type Category, type Visibility } from '@/data/types';
 import { atDayOffset, fmtDay, fmtTime } from '@/lib/format';
 import { Screen } from '@/components/Screen';
@@ -164,7 +163,8 @@ export default function CreateHangoutScreen() {
 function PlacePickedRow({ cid }: { cid: string }) {
   const p = usePalette();
   const draft = useDraft();
-  const place = PLACES.find((pl) => pl.id === cid);
+  const places = useApp((s) => s.places);
+  const place = places.find((pl) => pl.id === cid);
   if (!place) return null;
   return (
     <Card style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>

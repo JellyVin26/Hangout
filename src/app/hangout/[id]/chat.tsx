@@ -15,7 +15,7 @@ import { Camera, PaperPlaneTilt, Plus, Smiley, X } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { photoUri, userById } from '@/data/seed';
+import { photoUri } from '@/data/seed';
 import { fmtTime, timeAgo } from '@/lib/format';
 import { Avatar } from '@/components/Avatar';
 import { Ty } from '@/components/Text';
@@ -28,6 +28,12 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
   const sendMessage = useApp((s) => s.sendMessage);
+  const friendsList = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
+  const userById = (uid: string) => {
+    if (currentUser?.id === uid) return currentUser;
+    return friendsList.find((u) => u.id === uid) ?? { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+  };
   const [text, setText] = useState('');
   const scrollRef = useRef<ScrollView>(null);
 

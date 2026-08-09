@@ -13,16 +13,25 @@ export default function SignInScreen() {
   const p = usePalette();
   const router = useRouter();
   const signIn = useApp((s) => s.signIn);
+  const loading = useApp((s) => s.loading);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [authError, setAuthError] = useState('');
 
-  const submit = () => {
+  const submit = async () => {
     const e: Record<string, string> = {};
     if (!/^\S+@\S+\.\S+$/.test(email)) e.email = 'Enter a valid email';
     if (password.length < 1) e.password = 'Enter your password';
     setErrors(e);
-    if (Object.keys(e).length === 0) signIn();
+    setAuthError('');
+    if (Object.keys(e).length === 0) {
+      try {
+        await signIn(email, password);
+      } catch (err: any) {
+        setAuthError(err?.message || 'Login failed');
+      }
+    }
   };
 
   return (
@@ -58,7 +67,19 @@ export default function SignInScreen() {
           />
         </Field>
 
-        <Button label="Log in" fullWidth size="lg" onPress={submit} style={{ marginTop: space.sm }} />
+        <Button label={loading ? 'Signing in…' : 'Log in'} fullWidth size="lg" onPress={submit} style={{ marginTop: space.sm }} />
+
+        {!!authError && (
+          <Ty variant="bodySmall" color="#E5484D" style={{ marginTop: space.sm, textAlign: 'center' }}>
+            {authError}
+          </Ty>
+        )}
+
+        <View style={{ marginTop: space.md, padding: space.sm, borderRadius: 12, backgroundColor: p.surfaceAlt }}>
+          <Ty variant="bodySmall" muted center>
+            Demo login: maya@hangout.app / password123
+          </Ty>
+        </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 4, marginTop: space.xl }}>
           <Ty variant="bodySmall" muted>

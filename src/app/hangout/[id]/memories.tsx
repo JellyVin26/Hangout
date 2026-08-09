@@ -5,7 +5,6 @@ import { Camera, Download, Heart, Plus } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { userById } from '@/data/seed';
 import { fmtFull, timeAgo } from '@/lib/format';
 import { Screen, EmptyState } from '@/components/Screen';
 import { Button } from '@/components/Button';
@@ -19,6 +18,12 @@ export default function MemoriesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
   const addPhoto = useApp((s) => s.addPhoto);
+  const friends = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
+  const userById = (uid: string) => {
+    if (currentUser?.id === uid) return currentUser;
+    return friends.find((u) => u.id === uid) ?? { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+  };
   const [liked, setLiked] = useState<Record<string, boolean>>({});
 
   if (!hangout) {

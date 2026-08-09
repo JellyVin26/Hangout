@@ -3,8 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Clock, MapPin, Star, Wallet } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
-import { usePalette } from '@/store/useApp';
-import { PLACES, userById } from '@/data/seed';
+import { useApp, usePalette } from '@/store/useApp';
 import { Screen } from '@/components/Screen';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -16,7 +15,14 @@ export default function PlaceDetailScreen() {
   const p = usePalette();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const place = PLACES.find((pl) => pl.id === id);
+  const places = useApp((s) => s.places);
+  const friends = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
+  const userById = (uid: string) => {
+    if (currentUser?.id === uid) return currentUser;
+    return friends.find((u) => u.id === uid) ?? { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+  };
+  const place = places.find((pl) => pl.id === id);
 
   if (!place) {
     return (

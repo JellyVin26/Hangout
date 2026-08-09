@@ -5,7 +5,6 @@ import { CalendarBlank, MapPin, Plus, Timer, Images as ImagesIcon } from 'phosph
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { placeById, userById } from '@/data/seed';
 import { countdown, fmtDay, fmtFull, fmtTime, timeAgo } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { Card } from '@/components/Card';
@@ -20,6 +19,10 @@ export default function HangoutsScreen() {
   const router = useRouter();
   const now = useNow(30000);
   const hangouts = useApp((s) => s.hangouts);
+  const places = useApp((s) => s.places);
+  const friendsList = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
+  const userById = (uid: string) => friendsList.find((u) => u.id === uid) ?? currentUser!;
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
 
   const upcoming = hangouts
@@ -46,7 +49,7 @@ export default function HangoutsScreen() {
 
       <View style={{ gap: space.md }}>
         {list.map((h) => {
-          const pl = placeById(h.destinationId ?? h.candidates[0]);
+          const pl = places.find((item) => item.id === (h.destinationId ?? h.candidates[0]));
           const going = h.participants.filter((pp) => pp.rsvp !== 'invited');
           const isToday = fmtDay(h.at) === 'Today';
           const archived = h.status === 'archived';

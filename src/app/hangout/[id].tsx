@@ -3,7 +3,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatCircleDots, MapPin, CalendarBlank, Clock, Users, Images as ImagesIcon, Crown } from 'phosphor-react-native';
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { placeById, userById, PLACES } from '@/data/seed';
 import { countdown, fmtDay, fmtTime, fmtDuration, timeAgo } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { Screen, SectionHeader, EmptyState } from '@/components/Screen';
@@ -23,6 +22,9 @@ export default function HangoutDetailScreen() {
   const vote = useApp((s) => s.vote);
   const live = useApp((s) => s.live[id]);
   const startLive = useApp((s) => s.startLive);
+  const places = useApp((s) => s.places);
+  const friends = useApp((s) => s.friends);
+  const currentUser = useApp((s) => s.user);
 
   if (!hangout) {
     return (
@@ -36,7 +38,11 @@ export default function HangoutDetailScreen() {
     );
   }
 
-  const dest = placeById(hangout.destinationId);
+  const userById = (uid: string) => {
+    if (currentUser?.id === uid) return currentUser;
+    return friends.find((u) => u.id === uid) ?? { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+  };
+  const dest = places.find((pl) => pl.id === hangout.destinationId);
   const host = userById(hangout.hostId);
   const going = hangout.participants.filter((pp) => pp.rsvp !== 'invited');
   const invitedMe = hangout.participants.find((pp) => pp.userId === 'u_me');
@@ -126,7 +132,7 @@ export default function HangoutDetailScreen() {
             <SectionHeader title="Pick the place" actionLabel={`${totalVotes} votes`} />
             <View style={{ gap: space.md }}>
               {hangout.candidates.map((candId) => {
-                const pl = placeById(candId);
+                const pl = places.find((item) => item.id === candId);
                 if (!pl) return null;
                 const votes = votesFor(candId);
                 const isLeader = votes === maxVotes && maxVotes > 0;
