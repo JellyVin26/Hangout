@@ -60,8 +60,9 @@ interface AppState {
   setParticipantStatus: (hangoutId: string, userId: string, status: ArrivalStatus) => void;
 
   live: Record<string, LiveSession>;
-  startLive: (hangoutId: string) => void;
-  setSharing: (hangoutId: string, mode: SharingMode) => void;
+    startLive: (hangoutId: string) => void;
+    setSharing: (hangoutId: string, mode: SharingMode) => void;
+    refreshLiveBoard: (hangoutId: string) => Promise<void>;
 
   notifications: NotificationItem[];
   unreadCount: number;
@@ -270,26 +271,91 @@ export const useApp = create<AppState>()(
         });
       },
       setSharing: (hangoutId, mode) => {
-        set((s) => {
-          const session = s.live[hangoutId];
-          if (!session) return {};
-          return {
-            live: {
-              ...s.live,
-              [hangoutId]: {
-                ...session,
-                me: {
-                  ...session.me,
-                  sharing: mode,
-                  startedAt: mode === 'none' ? undefined : Date.now(),
-                },
-              },
+              set((s) => {
+                const session = s.live[hangoutId];
+                if (!session) return {};
+                return {
+                  live: {
+                    ...s.live,
+                    [hangoutId]: {
+                      ...session,
+                      me: {
+                        ...session.me,
+                        sharing: mode,
+                        startedAt: mode === 'none' ? undefined : Date.now(),
+                      },
+                    },
+                  },
+                };
+              });
             },
-          };
-        });
-      },
+            refreshLiveBoard: async (hangoutId) => {
+              try {
+                const board = (await api(`/hangouts/${hangoutId}/live/board`)) as {
+                            destination?: {
+                              id: string;
+                              name: string;
+                              category: string;
+                              address: string;
+                              lat: number;
+                              lng: number;
+                              rating: number;
+                              reviewCount: number;
+                              priceLevel: number;
+                              photoUrl?: string | null;
+                              openHours?: string | null;
+                            };
+                  participants?: Array<{
+                    userId: string;
+                    attendance: string;
+                    sharing: string;
+                    lastLat: number | null;
+                    lastLng: number | null;
+                  }>;
+                };
+                set((s) => {
+                  const session = s.live[hangoutId];
+                  if (!session) return {};
+                  const destination =
+                    board.destination ? apiPlaceToPlace(board.destination, 0) : session.destination;
+                  const travelers: typeof session.travelers = { ...session.travelers };
+                  for (const p of board.participants ?? []) {
+                    if (!p.lastLat || !p.lastLng) continue;
+                    const existing = travelers[p.userId];
+                    const status =
+                      p.attendance === 'ARRIVED'
+                        ? 'arrived'
+                        : p.attendance === 'ON_THE_WAY'
+                          ? 'onway'
+                          : p.attendance === 'LATE'
+                            ? 'late'
+                            : 'idle';
+                    const startedAt = existing?.startedAt ?? Date.now();
+                    const totalSec = existing?.totalSec ?? 900;
+                    const from = existing?.from ?? { x: 100, y: 1200 };
+                    const control = existing?.control ?? { x: 500, y: 700 };
+                    travelers[p.userId] = {
+                      userId: p.userId,
+                      status,
+                      totalSec,
+                      startedAt,
+                      from,
+                      control,
+                    };
+                  }
+                  return {
+                    live: {
+                      ...s.live,
+                      [hangoutId]: { ...session, travelers, destination },
+                    },
+                  };
+                });
+              } catch {
+                // offline ok
+              }
+            },
 
-      notifications: SEED_NOTIFICATIONS,
+            notifications: SEED_NOTIFICATIONS,
       unreadCount: 0,
       markAllRead: async () => {
         set((s) => ({

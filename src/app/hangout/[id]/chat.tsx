@@ -81,7 +81,7 @@ export default function ChatScreen() {
               ...h,
               messages: [
                 ...h.messages,
-                { id: `gen_${Date.now()}`, authorId: 'u_me', image: uri, at: Date.now(), kind: 'image' },
+                { id: `gen_${Date.now()}`, authorId: currentUser?.id ?? 'u_me', image: uri, at: Date.now(), kind: 'image' },
               ],
             }
           : h
@@ -131,7 +131,7 @@ export default function ChatScreen() {
             );
           }
           const author = userById(m.authorId);
-          const mine = m.authorId === 'u_me';
+          const mine = currentUser ? m.authorId === currentUser.id : m.authorId === 'u_me';
           return (
             <View
               key={m.id}

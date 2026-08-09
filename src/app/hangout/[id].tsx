@@ -302,20 +302,13 @@ export default function HangoutDetailScreen() {
           </Card>
         </View>
 
-        {/* Chat preview */}
+        {/* Plan snapshot */}
         <View style={{ marginTop: space.xl }}>
-          <SectionHeader title="Event chat" actionLabel={`${hangout.messages.length} messages`} />
-          <Card onPress={() => router.push(`/hangout/${id}/chat`)} style={{ flexDirection: 'row', alignItems: 'center', gap: space.md }}>
-            <View style={{ width: 44, height: 44, borderRadius: 15, backgroundColor: p.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-              <ChatCircleDots size={22} weight="duotone" color={p.accent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Ty variant="bodyStrong">Open chat</Ty>
-              <Ty variant="bodySmall" muted numberOfLines={1}>
-                {hangout.messages[hangout.messages.length - 1]?.text ?? 'Say hi to the group'}
-              </Ty>
-            </View>
-            <Ph name="ArrowUpRight" size={20} weight="bold" color={p.inkFaint} />
+          <SectionHeader title="Plan snapshot" />
+          <Card style={{ flexDirection: 'row', gap: space.sm }}>
+            <MiniStat icon="ChatCircleDots" label="Messages" value={`${hangout.messages.length}`} />
+            <MiniStat icon="MapPin" label="Places" value={`${hangout.candidates.length}`} />
+            <MiniStat icon="Images" label="Photos" value={`${hangout.photos.length}`} />
           </Card>
         </View>
 
@@ -356,14 +349,14 @@ export default function HangoutDetailScreen() {
               <Button label="Decline" variant="outline" style={{ flex: 1 }} onPress={() => toast('Invite declined')} />
               <Button label="Join" icon="Check" style={{ flex: 2 }} onPress={() => toast('You are in!')} />
             </>
-          ) : (
+          ) : isLive && dest ? (
             <>
               <Button
-                label={isLive && dest ? 'Live map' : 'Chat'}
+                label="Live map"
                 variant="outline"
-                icon={isLive && dest ? 'Navigation' : 'ChatCircleDots'}
+                icon="Navigation"
                 style={{ flex: 1 }}
-                onPress={() => router.push(isLive && dest ? `/hangout/${id}/live` : `/hangout/${id}/chat`)}
+                onPress={() => router.push(`/hangout/${id}/live`)}
               />
               <Button
                 label="Open chat"
@@ -372,6 +365,13 @@ export default function HangoutDetailScreen() {
                 onPress={() => router.push(`/hangout/${id}/chat`)}
               />
             </>
+          ) : (
+            <Button
+              label="Open chat"
+              icon="ChatCircleDots"
+              fullWidth
+              onPress={() => router.push(`/hangout/${id}/chat`)}
+            />
           )}
         </View>
       </View>
@@ -387,6 +387,19 @@ function MetaRow({ icon, text }: { icon: any; text: string }) {
       <Ty variant="bodySmall" muted style={{ flex: 1 }}>
         {text}
       </Ty>
+    </View>
+  );
+}
+
+function MiniStat({ icon, label, value }: { icon: any; label: string; value: string }) {
+  const p = usePalette();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', gap: 4 }}>
+      <View style={{ width: 34, height: 34, borderRadius: 12, backgroundColor: p.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+        <Ph name={icon} size={17} weight="duotone" color={p.accent} />
+      </View>
+      <Ty variant="bodyStrong">{value}</Ty>
+      <Ty variant="caption" faint style={{ fontSize: 10 }}>{label}</Ty>
     </View>
   );
 }

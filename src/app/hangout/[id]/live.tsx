@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Location from 'expo-location';
 import { NavigationArrow, X, Eye, Clock, MapPin } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
@@ -14,6 +15,7 @@ import { Button } from '@/components/Button';
 import { Ty } from '@/components/Text';
 import { Ph } from '@/components/icons';
 import { toast } from '@/components/Toast';
+import { api } from '@/lib/api';
 import type { SharingMode } from '@/data/types';
 
 export default function LiveScreen() {
@@ -25,18 +27,84 @@ export default function LiveScreen() {
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
   const live = useApp((s) => s.live[id]);
   const startLive = useApp((s) => s.startLive);
-  const setSharing = useApp((s) => s.setSharing);
-  const friendsList = useApp((s) => s.friends);
-  const currentUser = useApp((s) => s.user);
+    const setSharing = useApp((s) => s.setSharing);
+    const refreshLiveBoard = useApp((s) => s.refreshLiveBoard);
+    const friendsList = useApp((s) => s.friends);
+    const currentUser = useApp((s) => s.user);
   const userById = (uid: string) => {
     if (currentUser?.id === uid) return currentUser;
     return friendsList.find((u) => u.id === uid) ?? { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
   };
   const [promptVisible, setPromptVisible] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!live) startLive(id);
-  }, [id, live, startLive]);
+      if (!live) startLive(id);
+    }, [id, live, startLive]);
+
+    useEffect(() => {
+      if (!id) return;
+      refreshLiveBoard(String(id));
+      const t = setInterval(() => refreshLiveBoard(String(id)), 5000);
+      return () => clearInterval(t);
+    }, [id, refreshLiveBoard]);
+
+  useEffect(() => {
+    if (!id || live?.me.sharing !== 'live') return;
+    let active = true;
+    let sub: Location.LocationSubscription | null = null;
+
+    const postFix = async (coords: { latitude: number; longitude: number }) => {
+      try {
+        const res = await api<{ arrived?: boolean }>(`/hangouts/${id}/live/location`, {
+          method: 'POST',
+          body: { lat: coords.latitude, lng: coords.longitude },
+        });
+        if (res.arrived && active) {
+          setSharing(id, 'none');
+          toast('You arrived! Location sharing stopped.', 'success');
+        }
+      } catch {
+        // Keep local simulation alive when the network is spotty.
+      }
+    };
+
+    const run = async () => {
+      const perm = await Location.requestForegroundPermissionsAsync();
+      if (perm.status !== 'granted') {
+        if (active) {
+          setSharing(id, 'none');
+          setLocationError('Location permission is off. Enable it to share live progress.');
+          toast('Location permission is off', 'info');
+        }
+        return;
+      }
+
+      try {
+        setLocationError(null);
+        await api(`/hangouts/${id}/live/start`, { method: 'POST', body: { mode: 'LIVE' } }).catch(() => undefined);
+        const fix = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (active) await postFix(fix.coords);
+        sub = await Location.watchPositionAsync(
+          { accuracy: Location.Accuracy.Balanced, distanceInterval: 25, timeInterval: 10000 },
+          (loc) => { void postFix(loc.coords); }
+        );
+      } catch {
+        if (active) {
+          setSharing(id, 'none');
+          setLocationError('Could not read your location. Try again outside or check Location Services.');
+          toast('Could not read your location', 'info');
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      active = false;
+      sub?.remove();
+      void api(`/hangouts/${id}/live/stop`, { method: 'POST' }).catch(() => undefined);
+    };
+  }, [id, live?.me.sharing, setSharing]);
 
   if (!hangout || !live) {
     return (
@@ -66,6 +134,7 @@ export default function LiveScreen() {
     if (mode === 'live') {
       toast('Sharing live location. Stops when you arrive.', 'success');
     } else if (mode === 'eta') {
+      void api(`/hangouts/${id}/live/start`, { method: 'POST', body: { mode: 'ETA_ONLY' } }).catch(() => undefined);
       toast('Sharing your ETA with the group', 'success');
     }
   };
@@ -84,8 +153,9 @@ export default function LiveScreen() {
     <View style={{ flex: 1, backgroundColor: p.bg }}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 6, backgroundColor: p.bg }]}>
-        <Pressable onPress={() => router.replace('/')} hitSlop={8} style={{ padding: 6 }}>
-          <X size={22} weight="bold" color={p.ink} />
+        <Pressable onPress={() => router.replace('/')} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, padding: 6 }}>
+          <X size={20} weight="bold" color={p.ink} />
+          <Ty variant="caption" color={p.ink} style={{ fontWeight: '700' }}>Home</Ty>
         </Pressable>
         <View style={{ flex: 1, alignItems: 'center' }}>
           <Ty variant="title3">Live arrival</Ty>
@@ -93,7 +163,7 @@ export default function LiveScreen() {
             {hangout.title}
           </Ty>
         </View>
-        <View style={{ width: 34 }} />
+        <View style={{ width: 70 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
@@ -130,6 +200,17 @@ export default function LiveScreen() {
             icon={<Ph name="MapPin" size={18} weight="fill" color={p.ink} />}
           />
         </View>
+
+        {/* Location error */}
+        {locationError ? (
+          <View style={{ paddingHorizontal: space.screen, marginTop: space.md }}>
+            <View style={{ padding: space.md, borderRadius: radii.card, backgroundColor: p.warnSoft, borderColor: p.warn, borderWidth: 1 }}>
+              <Ty variant="caption" color={p.warn} style={{ fontWeight: '600' }}>
+                {locationError}
+              </Ty>
+            </View>
+          </View>
+        ) : null}
 
         {/* Ready to head out prompt */}
         {me.sharing === 'none' && promptVisible ? (

@@ -26,6 +26,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Hangout uses your location to share live arrival progress with people in the selected hangout."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FAF7F3",

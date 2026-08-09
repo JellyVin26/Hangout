@@ -156,29 +156,31 @@ export default function HomeScreen() {
                   {nextPlace ? `${nextPlace.name} · ${fmtDay(next.at)} at ${fmtTime(next.at)}` : `${fmtDay(next.at)} at ${fmtTime(next.at)}`}
                 </Ty>
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, justifyContent: 'space-between' }}>
-                <AvatarStack
-                  size={30}
-                  items={next.participants
-                    .filter((p) => p.rsvp !== 'invited')
-                    .map((p) => {
-                      const u = userById(p.userId);
-                      return { name: u.name, color: u.color, initials: u.initials, status: p.status };
-                    })}
-                />
-                {next.locationSharing ? (
-                  <Pressable
-                    onPress={() => router.push(`/hangout/${next.id}/live`)}
-                    hitSlop={8}
-                    style={{ backgroundColor: p.accent, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 }}
-                  >
-                    <Ph name="Navigation" size={13} weight="bold" color="#FFFFFF" />
-                    <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
-                      See live map
-                    </Ty>
-                  </Pressable>
-                ) : null}
-              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, justifyContent: 'space-between', gap: space.sm }}>
+                              <View style={{ flex: 1 }}>
+                                <AvatarStack
+                                  size={30}
+                                  items={next.participants
+                                    .filter((p) => p.rsvp !== 'invited')
+                                    .map((p) => {
+                                      const u = userById(p.userId);
+                                      return { name: u.name, color: u.color, initials: u.initials, status: p.status };
+                                    })}
+                                />
+                              </View>
+                              {next.locationSharing ? (
+                                <Pressable
+                                  onPress={() => router.push(`/hangout/${next.id}/live`)}
+                                  hitSlop={8}
+                                  style={{ backgroundColor: p.accent, borderRadius: radii.pill, paddingHorizontal: 12, paddingVertical: 7, flexDirection: 'row', alignItems: 'center', gap: 5 }}
+                                >
+                                  <Ph name="Navigation" size={13} weight="bold" color="#FFFFFF" />
+                                  <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
+                                    See live map
+                                  </Ty>
+                                </Pressable>
+                              ) : null}
+                            </View>
             </View>
           </Card>
         </View>
