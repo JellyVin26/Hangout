@@ -155,6 +155,8 @@ export interface LiveTraveler {
   startedAt: number;
   from: { x: number; y: number };
   control: { x: number; y: number };
+  lat?: number;
+  lng?: number;
 }
 
 export type SharingMode = 'live' | 'eta' | 'none';

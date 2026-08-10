@@ -341,6 +341,8 @@ export const useApp = create<AppState>()(
                       startedAt,
                       from,
                       control,
+                      lat: p.lastLat ?? undefined,
+                      lng: p.lastLng ?? undefined,
                     };
                   }
                   return {

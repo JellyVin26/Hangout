@@ -174,16 +174,18 @@ export default function LiveScreen() {
                     <RealMap
                       destination={{ lat: dest.lat, lng: dest.lng, name: dest.name }}
                       height={320}
-                      travelers={travelers.map(({ user, t }) => ({
-                        id: user.id,
-                        lat: dest.lat ?? 0,
-                        lng: dest.lng ?? 0,
-                        status: t.status,
-                        name: user.name,
-                        initials: user.initials,
-                        color: user.color,
-                        isMe: user.id === currentUser?.id,
-                      }))}
+                      travelers={travelers
+                        .filter(({ t }) => t.lat != null && t.lng != null)
+                        .map(({ user, t }) => ({
+                          id: user.id,
+                          lat: t.lat ?? 0,
+                          lng: t.lng ?? 0,
+                          status: t.status,
+                          name: user.name,
+                          initials: user.initials,
+                          color: user.color,
+                          isMe: user.id === currentUser?.id,
+                        }))}
                     />
                   ) : (
                     <LiveMap
