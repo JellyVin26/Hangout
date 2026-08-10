@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, TextInput, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Check, MagnifyingGlass, Star } from 'phosphor-react-native';
 
@@ -13,6 +13,7 @@ import { Button } from '@/components/Button';
 import { Ty } from '@/components/Text';
 import { Ph } from '@/components/icons';
 import { toast } from '@/components/Toast';
+import { api } from '@/lib/api';
 
 export default function PlacePickerScreen() {
   const p = usePalette();
@@ -21,8 +22,47 @@ export default function PlacePickerScreen() {
   const places = useApp((s) => s.places);
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('All');
+  const [remote, setRemote] = useState<typeof places | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const filtered = places.filter((pl) => {
+  // Debounced live search via backend → Google Places (when a key is configured).
+  useEffect(() => {
+    const q = query.trim();
+    if (q.length < 2) {
+      setRemote(null);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const data = (await api(`/places?q=${encodeURIComponent(q)}`)) as Array<{ id: string; name: string; category: string; address: string; rating: number; reviewCount: number; priceLevel: number; photoUrl?: string | null; openHours?: string | null; distanceKm?: number; tags?: string[] }>;
+        const mapped = data.map((r, i) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category,
+          address: r.address,
+          rating: r.rating,
+          reviewCount: r.reviewCount,
+          priceLevel: Math.min(3, Math.max(1, r.priceLevel)) as 1 | 2 | 3,
+          photo: r.photoUrl ?? '',
+          hours: r.openHours ?? '',
+          distanceKm: r.distanceKm ?? 0,
+          tags: r.tags ?? [],
+          map: { x: (i * 137) % 900 + 50, y: ((i * 211) % 1200) + 80 },
+        }));
+        setRemote(mapped);
+      } catch {
+        // silent — keep the local seeded list visible
+      } finally {
+        setLoading(false);
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const list = useMemo(() => remote ?? places, [remote, places]);
+
+  const filtered = list.filter((pl) => {
     const matchCat = cat === 'All' || pl.category === cat;
     const q = query.trim().toLowerCase();
     const matchQuery =
@@ -78,14 +118,22 @@ export default function PlacePickerScreen() {
         }}
       >
         <MagnifyingGlass size={20} weight="bold" color={p.inkFaint} />
-        <Ty variant="body" style={{ flex: 1 }} color={query ? p.ink : p.inkFaint}>
-          {query || 'Search places on Google Maps'}
-        </Ty>
-        {query ? (
-          <Pressable onPress={() => setQuery('')} hitSlop={8}>
-            <Ph name="X" size={18} weight="bold" color={p.inkFaint} />
-          </Pressable>
-        ) : null}
+                <TextInput
+                  value={query}
+                  onChangeText={setQuery}
+                  placeholder="Search places on Google Maps"
+                  placeholderTextColor={p.inkFaint}
+                  style={{ flex: 1, color: p.ink, fontSize: 15, fontFamily: 'Sora_400Regular' }}
+                  autoCorrect={false}
+                  returnKeyType="search"
+                />
+                {query ? (
+                  <Pressable onPress={() => setQuery('')} hitSlop={8}>
+                    <Ph name="X" size={18} weight="bold" color={p.inkFaint} />
+                  </Pressable>
+                ) : loading ? (
+                  <ActivityIndicator size="small" color={p.accent} />
+                ) : null}
       </View>
       {/* Category filter */}
       <ChipRow

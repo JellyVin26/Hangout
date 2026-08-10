@@ -171,8 +171,8 @@ export function apiPlaceToPlace(p: ApiPlace, index = 0): Place {
     priceLevel: Math.min(3, Math.max(1, p.priceLevel)) as 1 | 2 | 3,
     photo: p.photoUrl ?? '',
     hours: p.openHours ?? '',
-    distanceKm: 0,
-    tags: [],
+    distanceKm: (p as any).distanceKm ?? 0,
+    tags: (p as any).tags ?? [],
     map: { x: (index * 137) % 900 + 50, y: ((index * 211) % 1200) + 80 },
   };
 }
