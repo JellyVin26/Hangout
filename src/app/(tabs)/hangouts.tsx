@@ -35,6 +35,7 @@ export default function HangoutsScreen() {
     <Screen
       header={{ title: 'Hangouts', subtitle: `${upcoming.length} coming up` }}
       contentStyle={{ paddingHorizontal: space.screen, paddingBottom: 140 }}
+      floating={tab === 'upcoming' ? <Fab icon="Plus" label="New hangout" onPress={() => router.push('/create')} /> : undefined}
     >
       <View style={{ marginBottom: space.xl }}>
         <Segmented
@@ -126,15 +127,6 @@ export default function HangoutsScreen() {
           );
         })}
       </View>
-
-      {tab === 'upcoming' ? (
-        <Fab
-          icon="Plus"
-          label="New hangout"
-          onPress={() => router.push('/create')}
-          style={{ position: 'absolute', right: space.screen, bottom: 118 }}
-        />
-      ) : null}
     </Screen>
   );
 }

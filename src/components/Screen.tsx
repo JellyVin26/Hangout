@@ -27,6 +27,8 @@ interface ScreenProps extends ScrollViewProps {
     transparent?: boolean;
   };
   footer?: ReactNode;
+  /** Fixed overlay rendered above the bottom inset/nav bar, outside the scroll. */
+  floating?: ReactNode;
   style?: ViewStyle;
   contentStyle?: ViewStyle;
   keyboard?: boolean;
@@ -37,6 +39,7 @@ export function Screen({
   children,
   header,
   footer,
+  floating,
   style,
   contentStyle,
   keyboard,
@@ -107,6 +110,11 @@ export function Screen({
           ]}
         >
           {footer}
+        </View>
+      ) : null}
+      {floating ? (
+        <View style={[styles.floating, { bottom: insets.bottom + 96 }]} pointerEvents="box-none">
+          {floating}
         </View>
       ) : null}
     </SafeAreaView>
@@ -251,6 +259,11 @@ const styles = StyleSheet.create({
     paddingTop: space.md,
     paddingBottom: space.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  floating: {
+    position: 'absolute',
+    right: space.screen,
+    alignItems: 'flex-end',
   },
   sectionHeader: {
     flexDirection: 'row',
