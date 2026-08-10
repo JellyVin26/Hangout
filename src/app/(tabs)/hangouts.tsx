@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Image, Pressable, View } from 'react-native';
+import { Image, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CalendarBlank, MapPin, Plus, Timer, Images as ImagesIcon } from 'phosphor-react-native';
 
@@ -11,6 +11,7 @@ import { Card } from '@/components/Card';
 import { Segmented } from '@/components/Chip';
 import { Screen } from '@/components/Screen';
 import { AvatarStack } from '@/components/Avatar';
+import { Fab } from '@/components/Button';
 import { Ty } from '@/components/Text';
 
 export default function HangoutsScreen() {
@@ -32,30 +33,7 @@ export default function HangoutsScreen() {
 
   return (
     <Screen
-      header={{
-        title: 'Hangouts',
-        subtitle: `${upcoming.length} coming up`,
-        right: tab === 'upcoming' ? (
-          <Pressable
-            onPress={() => router.push('/create')}
-            hitSlop={8}
-            style={{
-              paddingHorizontal: 14,
-              paddingVertical: 8,
-              borderRadius: radii.pill,
-              backgroundColor: p.accent,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <Plus size={16} weight="bold" color="#FFFFFF" />
-            <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
-              New
-            </Ty>
-          </Pressable>
-        ) : undefined,
-      }}
+      header={{ title: 'Hangouts', subtitle: `${upcoming.length} coming up` }}
       contentStyle={{ paddingHorizontal: space.screen, paddingBottom: 140 }}
     >
       <View style={{ marginBottom: space.xl }}>
@@ -149,6 +127,14 @@ export default function HangoutsScreen() {
         })}
       </View>
 
+      {tab === 'upcoming' ? (
+        <Fab
+          icon="Plus"
+          label="New hangout"
+          onPress={() => router.push('/create')}
+          style={{ position: 'absolute', right: space.screen, bottom: 118 }}
+        />
+      ) : null}
     </Screen>
   );
 }

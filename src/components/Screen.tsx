@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { ArrowLeft } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { radii, space } from '@/theme/tokens';
 import { usePalette } from '@/store/useApp';
 import { haptic } from '@/lib/haptics';
@@ -44,6 +44,7 @@ export function Screen({
 }: ScreenProps) {
   const p = usePalette();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
 
   return (
     <SafeAreaView style={[styles.root, { backgroundColor: p.bg }, style]} edges={['top', 'bottom']}>
@@ -52,7 +53,7 @@ export function Screen({
           style={[
             styles.header,
             header.transparent
-              ? { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10, backgroundColor: 'transparent' }
+              ? { position: 'absolute', top: insets.top, left: 0, right: 0, zIndex: 10, backgroundColor: 'transparent' }
               : { backgroundColor: p.bg },
           ]}
         >
