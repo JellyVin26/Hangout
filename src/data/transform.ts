@@ -174,6 +174,8 @@ export function apiPlaceToPlace(p: ApiPlace, index = 0): Place {
     distanceKm: (p as any).distanceKm ?? 0,
     tags: (p as any).tags ?? [],
     map: { x: (index * 137) % 900 + 50, y: ((index * 211) % 1200) + 80 },
+    lat: (p as any).lat,
+    lng: (p as any).lng,
   };
 }
 

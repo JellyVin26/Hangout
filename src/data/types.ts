@@ -51,6 +51,9 @@ export interface Place {
   tags: string[];
   /** Position on the stylized live-map canvas (0..1000 x 0..1400). */
   map: { x: number; y: number };
+  /** Real-world coords when available (from Google Places). */
+  lat?: number;
+  lng?: number;
 }
 
 export type ArrivalStatus = 'arrived' | 'onway' | 'late' | 'idle';

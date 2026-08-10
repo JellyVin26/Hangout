@@ -49,6 +49,8 @@ export default function PlacePickerScreen() {
           distanceKm: r.distanceKm ?? 0,
           tags: r.tags ?? [],
           map: { x: (i * 137) % 900 + 50, y: ((i * 211) % 1200) + 80 },
+          lat: (r as any).lat,
+          lng: (r as any).lng,
         }));
         setRemote(mapped);
       } catch {

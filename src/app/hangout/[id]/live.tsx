@@ -10,6 +10,7 @@ import { useApp, usePalette } from '@/store/useApp';
 import { etaLabel } from '@/lib/format';
 import { useNow } from '@/lib/hooks';
 import { LiveMap } from '@/components/LiveMap';
+import { RealMap } from '@/components/RealMap';
 import { Avatar, StatusPill } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Ty } from '@/components/Text';
@@ -168,15 +169,32 @@ export default function LiveScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         {/* Map */}
-        <View style={{ paddingHorizontal: space.screen }}>
-          <LiveMap
-            session={live}
-            height={380}
-            showLegend
-            onArrive={onArrive}
-            onNavigate={() => toast('Opening Google Maps directions')}
-          />
-        </View>
+                <View style={{ paddingHorizontal: space.screen }}>
+                  {dest.lat != null && dest.lng != null ? (
+                    <RealMap
+                      destination={{ lat: dest.lat, lng: dest.lng, name: dest.name }}
+                      height={320}
+                      travelers={travelers.map(({ user, t }) => ({
+                        id: user.id,
+                        lat: dest.lat ?? 0,
+                        lng: dest.lng ?? 0,
+                        status: t.status,
+                        name: user.name,
+                        initials: user.initials,
+                        color: user.color,
+                        isMe: user.id === currentUser?.id,
+                      }))}
+                    />
+                  ) : (
+                    <LiveMap
+                      session={live}
+                      height={380}
+                      showLegend
+                      onArrive={onArrive}
+                      onNavigate={() => toast('Opening Google Maps directions')}
+                    />
+                  )}
+                </View>
 
         {/* Arrival summary */}
         <View style={{ flexDirection: 'row', gap: space.md, paddingHorizontal: space.screen, marginTop: space.md }}>

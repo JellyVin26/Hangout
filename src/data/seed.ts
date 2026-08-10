@@ -143,7 +143,9 @@ export const PLACES: Place[] = [
     distanceKm: 1.2,
     tags: ['pour over', 'brunch', 'cozy'],
     map: { x: 470, y: 380 },
-  },
+        lat: 37.7749,
+        lng: -122.4194,
+      },
   {
     id: 'p_suki',
     name: 'Suki Ramen House',
