@@ -86,9 +86,14 @@ export default function CreateHangoutScreen() {
       <View style={{ flexDirection: 'row', gap: space.md }}>
               <View style={{ flex: 1 }}>
                 <Field label="Start time">
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    {[19, 20, 21, 9, 10].map((h) => {
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 8, paddingRight: space.md }}
+                  >
+                    {Array.from({ length: 24 }, (_, h) => {
                       const selected = new Date(draft.at).getHours() === h;
+                      const label = `${h % 12 === 0 ? 12 : h % 12} ${h >= 12 ? 'PM' : 'AM'}`;
                       return (
                         <Pressable
                           key={h}
@@ -96,20 +101,22 @@ export default function CreateHangoutScreen() {
                           hitSlop={6}
                           style={{
                             paddingHorizontal: space.md,
-                            paddingVertical: 8,
+                            paddingVertical: 10,
                             borderRadius: radii.input,
                             backgroundColor: selected ? p.accent : p.surface,
                             borderWidth: 1,
                             borderColor: selected ? p.accent : p.line,
+                            minWidth: 64,
+                            alignItems: 'center',
                           }}
                         >
                           <Ty variant="bodySmall" color={selected ? '#FFFFFF' : p.ink} style={{ fontWeight: '600' }}>
-                            {h % 12 === 0 ? 12 : h % 12} {h >= 12 ? 'PM' : 'AM'}
+                            {label}
                           </Ty>
                         </Pressable>
                       );
                     })}
-                  </View>
+                  </ScrollView>
                 </Field>
               </View>
               <View style={{ flex: 1 }}>

@@ -128,13 +128,13 @@ export default function HangoutsScreen() {
       </View>
 
       {tab === 'upcoming' ? (
-        <Fab
-          icon="Plus"
-          label="New hangout"
-          onPress={() => router.push('/create')}
-          style={{ position: 'absolute', right: space.screen, bottom: 20 }}
-        />
-      ) : null}
+              <Fab
+                icon="Plus"
+                label="New hangout"
+                onPress={() => router.push('/create')}
+                style={{ position: 'absolute', right: space.screen, bottom: 118 }}
+              />
+            ) : null}
     </Screen>
   );
 }
