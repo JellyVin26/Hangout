@@ -100,7 +100,15 @@ export default function PlacePickerScreen() {
             size="lg"
             onPress={() => router.back()}
           />
-        ) : undefined
+        ) : (
+          <Button
+            label="Skip for now"
+            variant="soft"
+            fullWidth
+            size="lg"
+            onPress={() => router.back()}
+          />
+        )
       }
       contentStyle={{ paddingHorizontal: space.screen }}
     >

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CalendarBlank, Clock, MapPin, Users } from 'phosphor-react-native';
 
@@ -40,23 +40,31 @@ export default function CreateHangoutScreen() {
     draft.set({ at: atDayOffset(offset, new Date(draft.at).getHours(), new Date(draft.at).getMinutes()) });
   };
 
-  const canContinue = draft.title.trim().length > 0 && draft.candidateIds.length > 0;
+  const canContinue = draft.title.trim().length > 0 && (draft.candidateIds.length > 0 || true);
 
-  return (
-    <Screen
-      header={{ back: true, title: 'New hangout' }}
-      footer={
-        <Button
-          label="Continue"
-          icon="ArrowRight"
-          fullWidth
-          size="lg"
-          disabled={!canContinue}
-          onPress={() => router.push('/create/invite')}
-        />
+    const handleContinue = () => {
+      if (draft.candidateIds.length === 0) {
+        router.push('/create/place');
+      } else {
+        router.push('/create/invite');
       }
-      contentStyle={{ paddingHorizontal: space.screen }}
-    >
+    };
+
+    return (
+      <Screen
+        header={{ back: true, title: 'New hangout' }}
+        footer={
+          <Button
+            label="Continue"
+            icon="ArrowRight"
+            fullWidth
+            size="lg"
+            disabled={!draft.title.trim()}
+            onPress={handleContinue}
+          />
+        }
+        contentStyle={{ paddingHorizontal: space.screen }}
+      >
       {/* Details */}
       <Ty variant="title3" style={{ marginBottom: space.md }}>
         The basics
@@ -76,30 +84,46 @@ export default function CreateHangoutScreen() {
         <ChipRow options={DAYS} value={`${dayOffset}`} onChange={(v) => setDay(Number(v))} />
       </Field>
       <View style={{ flexDirection: 'row', gap: space.md }}>
-        <View style={{ flex: 1 }}>
-          <Field label="Start time">
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Input
-                value={fmtTime(draft.at)}
-                onFocus={() => setTime(new Date().getHours() + 1)}
-                editable={false}
-                style={{ flex: 1 }}
-              />
+              <View style={{ flex: 1 }}>
+                <Field label="Start time">
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    {[19, 20, 21, 9, 10].map((h) => {
+                      const selected = new Date(draft.at).getHours() === h;
+                      return (
+                        <Pressable
+                          key={h}
+                          onPress={() => setTime(h)}
+                          hitSlop={6}
+                          style={{
+                            paddingHorizontal: space.md,
+                            paddingVertical: 8,
+                            borderRadius: radii.input,
+                            backgroundColor: selected ? p.accent : p.surface,
+                            borderWidth: 1,
+                            borderColor: selected ? p.accent : p.line,
+                          }}
+                        >
+                          <Ty variant="bodySmall" color={selected ? '#FFFFFF' : p.ink} style={{ fontWeight: '600' }}>
+                            {h % 12 === 0 ? 12 : h % 12} {h >= 12 ? 'PM' : 'AM'}
+                          </Ty>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </Field>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Field label="Duration">
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <IconButton icon="Minus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: Math.max(30, draft.durationMin - 30) })} />
+                    <Ty variant="bodyStrong" style={{ width: 64, textAlign: 'center' }}>
+                      {draft.durationMin >= 60 ? `${Math.floor(draft.durationMin / 60)}h ${draft.durationMin % 60 ? `${draft.durationMin % 60}m` : ''}` : `${draft.durationMin}m`}
+                    </Ty>
+                    <IconButton icon="Plus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: draft.durationMin + 30 })} />
+                  </View>
+                </Field>
+              </View>
             </View>
-          </Field>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Field label="Duration">
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <IconButton icon="Minus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: Math.max(30, draft.durationMin - 30) })} />
-              <Ty variant="bodyStrong" style={{ width: 64, textAlign: 'center' }}>
-                {draft.durationMin >= 60 ? `${Math.floor(draft.durationMin / 60)}h ${draft.durationMin % 60 ? `${draft.durationMin % 60}m` : ''}` : `${draft.durationMin}m`}
-              </Ty>
-              <IconButton icon="Plus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: draft.durationMin + 30 })} />
-            </View>
-          </Field>
-        </View>
-      </View>
 
       {/* Category */}
       <Ty variant="title3" style={{ marginBottom: space.md }}>

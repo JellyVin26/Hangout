@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Image, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CalendarBlank, Clock, MapPin, Users } from 'phosphor-react-native';
@@ -26,28 +27,35 @@ export default function ReviewScreen() {
   const candidates = draft.candidateIds.map((cid) => places.find((pl) => pl.id === cid)).filter(Boolean) as Place[];
   const userById = (uid: string) => friendsList.find((u) => u.id === uid) ?? currentUser!;
   const invitees = draft.inviteeIds.map((id) => userById(id));
+  const [creating, setCreating] = useState(false);
 
   const create = async () => {
-    const id = await createHangout({
-      title: draft.title.trim(),
-      description: draft.description.trim() || undefined,
-      at: draft.at,
-      durationMin: draft.durationMin,
-      category: draft.category,
-      visibility: draft.visibility,
-      maxParticipants: draft.maxParticipants,
-      candidates: draft.candidateIds,
-      inviteeIds: draft.inviteeIds,
-    });
-    draft.reset();
-    toast('Hangout created!', 'success');
-    router.replace(`/hangout/${id}`);
+    setCreating(true);
+    try {
+      const id = await createHangout({
+        title: draft.title.trim(),
+        description: draft.description.trim() || undefined,
+        at: draft.at,
+        durationMin: draft.durationMin,
+        category: draft.category,
+        visibility: draft.visibility,
+        candidates: draft.candidateIds,
+        inviteeIds: draft.inviteeIds,
+      });
+      draft.reset();
+      toast('Hangout created!', 'success');
+      router.replace(`/hangout/${id}`);
+    } catch (e: any) {
+      toast(e?.message ?? 'Could not create hangout', 'info');
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
     <Screen
       header={{ back: true, title: 'Review' }}
-      footer={<Button label="Create hangout" icon="Check" fullWidth size="lg" onPress={create} />}
+      footer={<Button label={creating ? 'Creating...' : 'Create hangout'} icon="Check" fullWidth size="lg" onPress={create} disabled={creating} />}
       contentStyle={{ paddingHorizontal: space.screen }}
     >
       {/* Summary card */}
