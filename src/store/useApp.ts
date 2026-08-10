@@ -234,20 +234,24 @@ export const useApp = create<AppState>()(
               }
             },
       addPhoto: (hangoutId, uri) => {
-        set((s) => ({
-          hangouts: s.hangouts.map((h) =>
-            h.id === hangoutId
-              ? {
-                  ...h,
-                  photos: [
-                    ...h.photos,
-                    { id: uid(), uri, by: get().user?.id ?? 'me', at: Date.now(), likes: 0 },
-                  ],
-                }
-              : h
-          ),
-        }));
-      },
+              set((s) => ({
+                hangouts: s.hangouts.map((h) =>
+                  h.id === hangoutId
+                    ? {
+                        ...h,
+                        photos: [
+                          ...h.photos,
+                          { id: uid(), uri, by: get().user?.id ?? 'me', at: Date.now(), likes: 0 },
+                        ],
+                      }
+                    : h
+                ),
+              }));
+              void api(`/hangouts/${hangoutId}/memories`, {
+                method: 'POST',
+                body: { url: uri, kind: 'PHOTO' },
+              }).catch(() => undefined);
+            },
       setParticipantStatus: (hangoutId, userId, status) => {
         set((s) => ({
           hangouts: s.hangouts.map((h) =>

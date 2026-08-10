@@ -15,8 +15,9 @@ import { Camera, PaperPlaneTilt, Plus, Smiley, X } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
-import { photoUri } from '@/data/seed';
 import { fmtTime, timeAgo } from '@/lib/format';
+import { pickAndUploadImage } from '@/lib/upload';
+import { api } from '@/lib/api';
 import { Avatar } from '@/components/Avatar';
 import { Ty } from '@/components/Text';
 import { toast } from '@/components/Toast';
@@ -66,28 +67,36 @@ export default function ChatScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 60);
   };
 
-  const addPhoto = () => {
-    const uri = photoUri(`chat-${Math.floor(Math.random() * 10000)}`);
-    // addPhoto exists on the store but the model only stores text messages;
-    // simulate by sending a photo message.
-    sendPhoto(uri);
+  const addPhoto = async () => {
+    try {
+      const picked = await pickAndUploadImage();
+      if (!picked) return;
+      await sendPhoto(picked.url);
+    } catch (e: any) {
+      toast(e?.message ?? 'Photo upload failed');
+    }
   };
 
-  const sendPhoto = (uri: string) => {
+  const sendPhoto = async (url: string) => {
+    const id = `local_${Date.now()}`;
+    const at = Date.now();
+    const authorId = currentUser?.id ?? 'u_me';
     useApp.setState((s) => ({
       hangouts: s.hangouts.map((h) =>
         h.id === hangout.id
-          ? {
-              ...h,
-              messages: [
-                ...h.messages,
-                { id: `gen_${Date.now()}`, authorId: currentUser?.id ?? 'u_me', image: uri, at: Date.now(), kind: 'image' },
-              ],
-            }
-          : h
+          ? { ...h, messages: [...h.messages, { id, authorId, image: url, at, kind: 'image' }] }
+          : h,
       ),
     }));
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 80);
+    try {
+      await api(`/hangouts/${hangout.id}/messages`, {
+        method: 'POST',
+        body: { body: '', kind: 'IMAGE', mediaUrl: url },
+      });
+    } catch {
+      // keep optimistic message; refreshMessages will reconcile
+    }
   };
 
   return (

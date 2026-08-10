@@ -121,7 +121,7 @@ export default function HomeScreen() {
                 />
               </View>
             ) : (
-              <View style={{ height: 90, backgroundColor: p.accentSoft, justifyContent: 'flex-end' }} />
+              <View style={{ height: 190, backgroundColor: p.accentSoft }} />
             )}
             <View
               style={{

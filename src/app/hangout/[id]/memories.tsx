@@ -6,6 +6,7 @@ import { Camera, Download, Heart, Plus } from 'phosphor-react-native';
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
 import { fmtFull, timeAgo } from '@/lib/format';
+import { pickAndUploadImage } from '@/lib/upload';
 import { Screen, EmptyState } from '@/components/Screen';
 import { Button } from '@/components/Button';
 import { Ty } from '@/components/Text';
@@ -34,11 +35,16 @@ export default function MemoriesScreen() {
     );
   }
 
-  const add = () => {
-    const uri = `https://picsum.photos/seed/memory-${Math.floor(Math.random() * 10000)}/800/600`;
-    addPhoto(hangout.id, uri);
-    toast('Photo added to the album', 'success');
-  };
+  const add = async () => {
+      try {
+        const picked = await pickAndUploadImage();
+        if (!picked) return;
+        addPhoto(hangout.id, picked.url);
+        toast('Photo added to the album', 'success');
+      } catch (e: any) {
+        toast(e?.message ?? 'Photo upload failed');
+      }
+    };
 
   const sorted = [...hangout.photos].sort((a, b) => b.at - a.at);
 
