@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
 import { CalendarBlank, Clock, MapPin, Users } from 'phosphor-react-native';
 
@@ -29,12 +30,26 @@ export default function CreateHangoutScreen() {
   const draft = useDraft();
   const [dayOffset, setDayOffset] = useState(1);
 
-  const setTime = (hour: number, minute = 0) => {
-    const d = new Date(draft.at);
-    d.setHours(hour, minute, 0, 0);
-    draft.set({ at: d.getTime() });
+  const setHour = (h12: number) => {
+    const cur = new Date(draft.at);
+    const ampm = cur.getHours() >= 12 ? 'PM' : 'AM';
+    const h24 = ampm === 'PM' ? (h12 === 12 ? 12 : h12 + 12) : h12 === 12 ? 0 : h12;
+    cur.setHours(h24, cur.getMinutes(), 0, 0);
+    draft.set({ at: cur.getTime() });
   };
-
+  const setMinute = (m: number) => {
+    const cur = new Date(draft.at);
+    cur.setMinutes(m, 0, 0);
+    draft.set({ at: cur.getTime() });
+  };
+  const setAmPm = (ampm: 'AM' | 'PM') => {
+    const cur = new Date(draft.at);
+    const isPm = cur.getHours() >= 12;
+    if ((ampm === 'PM' && !isPm) || (ampm === 'AM' && isPm)) {
+      cur.setHours(cur.getHours() + (ampm === 'PM' ? 12 : -12));
+    }
+    draft.set({ at: cur.getTime() });
+  };
   const setDay = (offset: number) => {
     setDayOffset(offset);
     draft.set({ at: atDayOffset(offset, new Date(draft.at).getHours(), new Date(draft.at).getMinutes()) });
@@ -83,53 +98,62 @@ export default function CreateHangoutScreen() {
       <Field label="Day">
         <ChipRow options={DAYS} value={`${dayOffset}`} onChange={(v) => setDay(Number(v))} />
       </Field>
-      <View style={{ flexDirection: 'row', gap: space.md }}>
-              <View style={{ flex: 1 }}>
-                <Field label="Start time">
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ gap: 8, paddingRight: space.md }}
+      <View style={{ gap: space.md }}>
+              <Field label="Start time">
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: p.surface,
+                    borderRadius: radii.input,
+                    borderWidth: 1,
+                    borderColor: p.line,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Picker
+                    selectedValue={String(new Date(draft.at).getHours())}
+                    onValueChange={(v) => setHour(Number(v))}
+                    style={{ flex: 1, height: 132, color: p.ink }}
+                    itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
                   >
-                    {Array.from({ length: 24 }, (_, h) => {
-                      const selected = new Date(draft.at).getHours() === h;
-                      const label = `${h % 12 === 0 ? 12 : h % 12} ${h >= 12 ? 'PM' : 'AM'}`;
-                      return (
-                        <Pressable
-                          key={h}
-                          onPress={() => setTime(h)}
-                          hitSlop={6}
-                          style={{
-                            paddingHorizontal: space.md,
-                            paddingVertical: 10,
-                            borderRadius: radii.input,
-                            backgroundColor: selected ? p.accent : p.surface,
-                            borderWidth: 1,
-                            borderColor: selected ? p.accent : p.line,
-                            minWidth: 64,
-                            alignItems: 'center',
-                          }}
-                        >
-                          <Ty variant="bodySmall" color={selected ? '#FFFFFF' : p.ink} style={{ fontWeight: '600' }}>
-                            {label}
-                          </Ty>
-                        </Pressable>
-                      );
+                    {Array.from({ length: 12 }, (_, i) => {
+                      const h12 = i + 1;
+                      return <Picker.Item key={h12} label={String(h12).padStart(2, '0')} value={String(h12 === 12 ? 0 : h12)} />;
                     })}
-                  </ScrollView>
-                </Field>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Field label="Duration">
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <IconButton icon="Minus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: Math.max(30, draft.durationMin - 30) })} />
-                    <Ty variant="bodyStrong" style={{ width: 64, textAlign: 'center' }}>
-                      {draft.durationMin >= 60 ? `${Math.floor(draft.durationMin / 60)}h ${draft.durationMin % 60 ? `${draft.durationMin % 60}m` : ''}` : `${draft.durationMin}m`}
-                    </Ty>
-                    <IconButton icon="Plus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: draft.durationMin + 30 })} />
-                  </View>
-                </Field>
-              </View>
+                  </Picker>
+                  <View style={{ width: 1, height: 80, backgroundColor: p.line }} />
+                  <Picker
+                    selectedValue={String(new Date(draft.at).getMinutes())}
+                    onValueChange={(v) => setMinute(Number(v))}
+                    style={{ flex: 1, height: 132, color: p.ink }}
+                    itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
+                  >
+                    {Array.from({ length: 60 }, (_, m) => (
+                      <Picker.Item key={m} label={String(m).padStart(2, '0')} value={String(m)} />
+                    ))}
+                  </Picker>
+                  <View style={{ width: 1, height: 80, backgroundColor: p.line }} />
+                  <Picker
+                    selectedValue={new Date(draft.at).getHours() >= 12 ? 'PM' : 'AM'}
+                    onValueChange={(v) => setAmPm(v as 'AM' | 'PM')}
+                    style={{ flex: 1, height: 132, color: p.ink }}
+                    itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
+                  >
+                    <Picker.Item label="AM" value="AM" />
+                    <Picker.Item label="PM" value="PM" />
+                  </Picker>
+                </View>
+              </Field>
+              <Field label="Duration">
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <IconButton icon="Minus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: Math.max(30, draft.durationMin - 30) })} />
+                  <Ty variant="bodyStrong" style={{ width: 64, textAlign: 'center' }}>
+                    {draft.durationMin >= 60 ? `${Math.floor(draft.durationMin / 60)}h ${draft.durationMin % 60 ? `${draft.durationMin % 60}m` : ''}` : `${draft.durationMin}m`}
+                  </Ty>
+                  <IconButton icon="Plus" size={16} bg={p.surfaceAlt} onPress={() => draft.set({ durationMin: draft.durationMin + 30 })} />
+                </View>
+              </Field>
             </View>
 
       {/* Category */}
