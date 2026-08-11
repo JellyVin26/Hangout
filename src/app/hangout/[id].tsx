@@ -54,7 +54,7 @@ export default function HangoutDetailScreen() {
   const votesFor = (placeId: string) => (hangout.votes[placeId] ?? []).length;
   const maxVotes = Math.max(1, ...hangout.candidates.map(votesFor));
   const totalVotes = hangout.candidates.reduce((acc, c) => acc + votesFor(c), 0);
-  const myVote = hangout.candidates.find((c) => (hangout.votes[c] ?? []).includes(meId));
+  const myVote = meId ? hangout.candidates.find((c) => (hangout.votes[c] ?? []).includes(meId)) : undefined;
 
   return (
     <Screen
