@@ -35,7 +35,8 @@ export default function PlacePickerScreen() {
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const data = (await api(`/places?q=${encodeURIComponent(q)}`)) as Array<{ id: string; name: string; category: string; address: string; rating: number; reviewCount: number; priceLevel: number; photoUrl?: string | null; openHours?: string | null; distanceKm?: number; tags?: string[] }>;
+        // Default to central Singapore when the user has not shared current GPS yet.
+        const data = (await api(`/places?q=${encodeURIComponent(q)}&lat=1.29&lng=103.85`)) as Array<{ id: string; name: string; category: string; address: string; rating: number; reviewCount: number; priceLevel: number; photoUrl?: string | null; openHours?: string | null; distanceKm?: number; tags?: string[] }>;
         const mapped = data.map((r, i) => ({
           id: r.id,
           name: r.name,
@@ -98,7 +99,7 @@ export default function PlacePickerScreen() {
             icon="Check"
             fullWidth
             size="lg"
-            onPress={() => router.back()}
+            onPress={() => router.push('/create/review')}
           />
         ) : (
           <Button
@@ -106,7 +107,7 @@ export default function PlacePickerScreen() {
             variant="soft"
             fullWidth
             size="lg"
-            onPress={() => router.back()}
+            onPress={() => router.push('/create/review')}
           />
         )
       }
