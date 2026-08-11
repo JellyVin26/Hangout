@@ -45,14 +45,16 @@ export default function HangoutDetailScreen() {
   const dest = places.find((pl) => pl.id === hangout.destinationId);
   const host = userById(hangout.hostId);
   const going = hangout.participants.filter((pp) => pp.rsvp !== 'invited');
-  const invitedMe = hangout.participants.find((pp) => pp.userId === 'u_me');
+  const meId = currentUser?.id;
+  const invitedMe = hangout.participants.find((pp) => pp.userId === meId);
   const myRsvp = invitedMe?.rsvp ?? 'invited';
+  const isHost = meId ? hangout.hostId === meId : false;
   const isLive = hangout.status !== 'archived' && hangout.at - now < 45 * 60000 && hangout.at - now > -2 * 3600000;
   const sessionLive = !!live;
   const votesFor = (placeId: string) => (hangout.votes[placeId] ?? []).length;
   const maxVotes = Math.max(1, ...hangout.candidates.map(votesFor));
   const totalVotes = hangout.candidates.reduce((acc, c) => acc + votesFor(c), 0);
-  const myVote = hangout.candidates.find((c) => (hangout.votes[c] ?? []).includes('u_me'));
+  const myVote = hangout.candidates.find((c) => (hangout.votes[c] ?? []).includes(meId));
 
   return (
     <Screen
@@ -115,7 +117,7 @@ export default function HangoutDetailScreen() {
             <Ty variant="bodySmall" muted>
               Hosted by <Ty variant="bodySmall" style={{ fontWeight: '700' }} color={p.ink}>{host.name.split(' ')[0]}</Ty>
             </Ty>
-            {hangout.hostId === 'u_me' ? (
+            {hangout.hostId === meId ? (
               <View style={{ backgroundColor: p.warnSoft, borderRadius: radii.pill, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <Crown size={11} weight="fill" color={p.warn} />
                 <Ty variant="caption" color={p.warn} style={{ fontWeight: '700', fontSize: 10 }}>
@@ -283,7 +285,7 @@ export default function HangoutDetailScreen() {
                         {u.name}
                       </Ty>
                       {pp.role === 'host' ? <Crown size={13} weight="fill" color={p.warn} /> : null}
-                      {pp.userId === 'u_me' ? (
+                      {pp.userId === meId ? (
                         <View style={{ backgroundColor: p.accentSoft, borderRadius: radii.pill, paddingHorizontal: 7, paddingVertical: 2 }}>
                           <Ty variant="caption" color={p.accentDeep} style={{ fontWeight: '700', fontSize: 10 }}>
                             You
@@ -344,7 +346,7 @@ export default function HangoutDetailScreen() {
       {/* Footer */}
       <View style={{ position: 'absolute', left: 16, right: 16, bottom: 0 }}>
         <View style={{ flexDirection: 'row', gap: space.sm, backgroundColor: p.bg, paddingTop: space.md, paddingBottom: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: p.line }}>
-          {myRsvp === 'invited' ? (
+          {!isHost && myRsvp === 'invited' ? (
             <>
               <Button label="Decline" variant="outline" style={{ flex: 1 }} onPress={() => toast('Invite declined')} />
               <Button label="Join" icon="Check" style={{ flex: 2 }} onPress={() => toast('You are in!')} />
