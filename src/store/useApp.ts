@@ -54,6 +54,7 @@ interface AppState {
   hangouts: Hangout[];
   createHangout: (input: CreateHangoutInput) => Promise<string>;
   vote: (hangoutId: string, placeId: string) => Promise<void>;
+  rsvp: (hangoutId: string, status: 'going' | 'declined') => Promise<void>;
   sendMessage: (hangoutId: string, text: string) => Promise<void>;
   refreshMessages: (hangoutId: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
@@ -191,10 +192,27 @@ export const useApp = create<AppState>()(
           hangouts: s.hangouts.map((h) => {
             if (h.id !== hangoutId) return h;
             const votes = { ...h.votes };
-            votes[placeId] = [...(votes[placeId] ?? []), 'u_me'];
+            const meId = get().user?.id;
+            votes[placeId] = meId ? [...(votes[placeId] ?? []), meId] : (votes[placeId] ?? []);
             return { ...h, votes, destinationId: placeId, status: 'confirmed' };
           }),
         }));
+      },
+      rsvp: async (hangoutId, status) => {
+        await api(`/hangouts/${hangoutId}/${status === 'going' ? 'join' : 'decline'}`, { method: 'POST' });
+        set((s) => {
+          const me = s.user;
+          if (!me) return {};
+          return {
+            hangouts: s.hangouts.map((h) => {
+              if (h.id !== hangoutId) return h;
+              const participants = h.participants.some((p) => p.userId === me.id)
+                ? h.participants.map((p) => (p.userId === me.id ? { ...p, rsvp: status } : p))
+                : [...h.participants, { userId: me.id, role: 'member' as const, rsvp: status, status: 'idle' as const }];
+              return { ...h, participants };
+            }),
+          };
+        });
       },
       sendMessage: async (hangoutId, text) => {
               // Optimistic update

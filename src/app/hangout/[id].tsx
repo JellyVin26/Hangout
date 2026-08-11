@@ -20,7 +20,8 @@ export default function HangoutDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
   const vote = useApp((s) => s.vote);
-  const live = useApp((s) => s.live[id]);
+    const rsvp = useApp((s) => s.rsvp);
+    const live = useApp((s) => s.live[id]);
   const startLive = useApp((s) => s.startLive);
   const places = useApp((s) => s.places);
   const friends = useApp((s) => s.friends);
@@ -347,11 +348,27 @@ export default function HangoutDetailScreen() {
       <View style={{ position: 'absolute', left: 16, right: 16, bottom: 0 }}>
         <View style={{ flexDirection: 'row', gap: space.sm, backgroundColor: p.bg, paddingTop: space.md, paddingBottom: space.lg, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: p.line }}>
           {!isHost && myRsvp === 'invited' ? (
-            <>
-              <Button label="Decline" variant="outline" style={{ flex: 1 }} onPress={() => toast('Invite declined')} />
-              <Button label="Join" icon="Check" style={{ flex: 2 }} onPress={() => toast('You are in!')} />
-            </>
-          ) : isLive && dest ? (
+                      <>
+                        <Button
+                          label="Decline"
+                          variant="outline"
+                          style={{ flex: 1 }}
+                          onPress={() => {
+                            void rsvp(id, 'declined');
+                            toast('Invite declined', 'info');
+                          }}
+                        />
+                        <Button
+                          label="Join"
+                          icon="Check"
+                          style={{ flex: 2 }}
+                          onPress={() => {
+                            void rsvp(id, 'going');
+                            toast('You are in!', 'success');
+                          }}
+                        />
+                      </>
+                    ) : isLive && dest ? (
             <>
               <Button
                 label="Live map"
