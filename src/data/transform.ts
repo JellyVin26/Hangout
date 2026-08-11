@@ -250,6 +250,7 @@ export function apiNotificationToNotification(n: ApiNotification): NotificationI
     FRIEND_ARRIVED: 'arrived',
     NEW_CHAT_MESSAGE: 'chat',
     EVENT_CANCELLED: 'cancel',
+    DESTINATION_FINALIZED: 'vote',
     FRIEND_REQUEST: 'friend_joined',
     HANGOUT_INVITE: 'friend_joined',
     SYSTEM: 'system',
