@@ -7,6 +7,7 @@ import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
 import { useDraft } from '@/store/useDraft';
 import { fmtDay, fmtTime, fmtDuration } from '@/lib/format';
+import { ApiError } from '@/lib/api';
 import type { Place } from '@/data/types';
 import { Screen } from '@/components/Screen';
 import { Card } from '@/components/Card';
@@ -21,6 +22,7 @@ export default function ReviewScreen() {
   const router = useRouter();
   const draft = useDraft();
   const createHangout = useApp((s) => s.createHangout);
+  const signOut = useApp((s) => s.signOut);
   const places = useApp((s) => s.places);
   const friendsList = useApp((s) => s.friends);
   const currentUser = useApp((s) => s.user);
@@ -46,7 +48,14 @@ export default function ReviewScreen() {
       toast('Hangout created!', 'success');
       router.replace(`/hangout/${id}`);
     } catch (e: any) {
-      toast(e?.message ?? 'Could not create hangout', 'info');
+      // Stale JWT (user recreated by re-seed) surfaces as 401/500 on create.
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
+        toast('Session expired — please log in again', 'info');
+        await signOut();
+        router.replace('/(auth)/signin');
+      } else {
+        toast(e?.message ?? 'Could not create hangout', 'info');
+      }
     } finally {
       setCreating(false);
     }
