@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowUpRight, CheckCircle, ChatCircleDots, Clock, Trophy, UserPlus, WarningCircle } from 'phosphor-react-native';
@@ -39,6 +40,11 @@ export default function ActivityScreen() {
   const router = useRouter();
   const notifications = useApp((s) => s.notifications);
   const markAllRead = useApp((s) => s.markAllRead);
+  const refreshNotifications = useApp((s) => s.refreshNotifications);
+
+  useEffect(() => {
+    refreshNotifications();
+  }, []);
 
   const grouped = notifications.reduce<Record<string, typeof notifications>>((acc, n) => {
     const d = new Date(n.at);

@@ -15,6 +15,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useApp } from '@/store/useApp';
 import { Toaster } from '@/components/Toast';
+import { registerPushToken, onPushNotification } from '@/lib/push';
+import { useRouter } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -22,6 +24,7 @@ export default function RootLayout() {
   const theme = useApp((s) => s.theme);
   const user = useApp((s) => s.user);
   const bootstrap = useApp((s) => s.bootstrap);
+  const router = useRouter();
   const [fontsLoaded] = useFonts({
     Sora_400Regular,
     Sora_500Medium,
@@ -38,8 +41,17 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded && user) {
       bootstrap().catch(() => {/* token may be expired; user will be prompted on next action */});
+      registerPushToken();
     }
   }, [fontsLoaded, user?.id]);
+
+  // Push taps → deep link to the hangout
+  useEffect(() => {
+    if (!user) return;
+    return onPushNotification((data) => {
+      if (data.hangoutId) router.push(`/hangout/${data.hangoutId}` as never);
+    });
+  }, [user?.id]);
 
   if (!fontsLoaded) return null;
 

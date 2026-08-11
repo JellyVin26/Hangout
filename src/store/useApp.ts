@@ -65,9 +65,10 @@ interface AppState {
     refreshLiveBoard: (hangoutId: string) => Promise<void>;
 
   notifications: NotificationItem[];
-  unreadCount: number;
-  markAllRead: () => Promise<void>;
-  pushNotification: (n: Omit<NotificationItem, 'id' | 'at' | 'read'>) => void;
+    unreadCount: number;
+    refreshNotifications: () => Promise<void>;
+    markAllRead: () => Promise<void>;
+    pushNotification: (n: Omit<NotificationItem, 'id' | 'at' | 'read'>) => void;
 
   badges: Badge[];
   places: Place[];
@@ -362,8 +363,19 @@ export const useApp = create<AppState>()(
             },
 
             notifications: SEED_NOTIFICATIONS,
-      unreadCount: 0,
-      markAllRead: async () => {
+                  unreadCount: 0,
+                  refreshNotifications: async () => {
+                    try {
+                      const res = await api<ApiNotificationsResponse>('/notifications');
+                      set({
+                        notifications: res.items?.map(apiNotificationToNotification) ?? [],
+                        unreadCount: res.unreadCount ?? 0,
+                      });
+                    } catch {
+                      /* offline ok */
+                    }
+                  },
+                  markAllRead: async () => {
         set((s) => ({
           notifications: s.notifications.map((n) => ({ ...n, read: true })),
           unreadCount: 0,

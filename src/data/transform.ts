@@ -243,19 +243,29 @@ export function apiMessageToMessage(m: ApiMessage): Message {
 export function apiNotificationToNotification(n: ApiNotification): NotificationItem {
   const kindMap: Record<string, NotificationKind> = {
     FRIEND_JOINED: 'friend_joined',
-    REMINDER: 'reminder',
-    VOTE: 'vote',
+    FRIEND_DECLINED: 'friend_declined',
+    EVENT_REMINDER: 'reminder',
+    VOTE_REMINDER: 'vote',
+    RUNNING_LATE: 'late',
+    FRIEND_ARRIVED: 'arrived',
+    NEW_CHAT_MESSAGE: 'chat',
+    EVENT_CANCELLED: 'cancel',
+    FRIEND_REQUEST: 'friend_joined',
+    HANGOUT_INVITE: 'friend_joined',
     SYSTEM: 'system',
   };
 
+  const payload = (n.payload ?? {}) as Record<string, any>;
+  const title = n.title ?? n.type.replace(/_/g, ' ').toLowerCase();
+  const body = n.body ?? payload.title ?? payload.body ?? '';
   return {
     id: n.id,
     kind: kindMap[n.type] ?? 'system',
-    title: n.title ?? n.type.replace(/_/g, ' ').toLowerCase(),
-    body: n.body ?? '',
+    title,
+    body,
     at: Date.parse(n.createdAt),
     read: n.read,
-    hangoutId: n.payload?.hangoutId,
+    hangoutId: payload?.hangoutId,
   };
 }
 
