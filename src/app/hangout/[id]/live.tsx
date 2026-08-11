@@ -127,7 +127,8 @@ export default function LiveScreen() {
   const arrivedCount = travelers.filter((x) => x.t.status === 'arrived').length;
   const onwayCount = travelers.filter((x) => x.t.status === 'onway' || x.t.status === 'late').length;
 
-  const myStatus = me.sharing === 'none' ? 'idle' : me.sharing === 'live' ? 'onway' : 'onway';
+  const meTraveler = Object.values(live.travelers).find((t) => t.userId === currentUser?.id);
+  const myDistance = meTraveler?.distanceKm;
 
   const choose = (mode: SharingMode) => {
     setSharing(id, mode);
@@ -213,8 +214,8 @@ export default function LiveScreen() {
             icon={<Ph name="Navigation" size={18} weight="fill" color={p.accent} />}
           />
           <SummaryCard
-            label="Destination"
-            value={dest.distanceKm.toFixed(1)}
+            label="To destination"
+            value={myDistance != null ? `${myDistance.toFixed(1)}` : dest.distanceKm.toFixed(1)}
             suffix="km"
             color={p.ink}
             icon={<Ph name="MapPin" size={18} weight="fill" color={p.ink} />}
@@ -320,7 +321,13 @@ export default function LiveScreen() {
                         />
                       </View>
                       <Ty variant="caption" faint style={{ marginTop: 3, fontSize: 10 }}>
-                        {t.status === 'arrived' ? 'Arrived at ' + dest.name : t.status === 'late' ? `Running late · ${remainingMin} min to go` : `${etaLabel(remainingMin)} to ${dest.name}`}
+                        {t.status === 'arrived'
+                          ? 'Arrived at ' + dest.name
+                          : t.status === 'late'
+                            ? `Running late · ${remainingMin} min to go`
+                            : t.distanceKm != null
+                              ? `${t.distanceKm.toFixed(1)} km · ${etaLabel(remainingMin)} to ${dest.name}`
+                              : `${etaLabel(remainingMin)} to ${dest.name}`}
                       </Ty>
                     </View>
                   </View>

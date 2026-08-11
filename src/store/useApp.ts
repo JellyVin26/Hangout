@@ -272,7 +272,12 @@ export const useApp = create<AppState>()(
       startLive: (hangoutId) => {
         set((s) => {
           if (s.live[hangoutId]) return {};
-          return { live: { ...s.live, [hangoutId]: buildLiveSession() } };
+          const session = buildLiveSession();
+          const hangout = s.hangouts.find((h) => h.id === hangoutId);
+          const destination = hangout?.destinationId
+            ? s.places.find((pl) => pl.id === hangout.destinationId) ?? session.destination
+            : session.destination;
+          return { live: { ...s.live, [hangoutId]: { ...session, hangoutId, destination } } };
         });
       },
       setSharing: (hangoutId, mode) => {
@@ -316,6 +321,8 @@ export const useApp = create<AppState>()(
                     sharing: string;
                     lastLat: number | null;
                     lastLng: number | null;
+                    distanceKm?: number | null;
+                    etaMin?: number | null;
                   }>;
                 };
                 set((s) => {
@@ -336,19 +343,23 @@ export const useApp = create<AppState>()(
                             ? 'late'
                             : 'idle';
                     const startedAt = existing?.startedAt ?? Date.now();
-                    const totalSec = existing?.totalSec ?? 900;
+                    // Real server-computed ETA (km at 5 km/h walking) when we have a GPS fix;
+                    // otherwise keep the simulated session duration.
+                    const etaMin = p.etaMin ?? null;
+                    const totalSec = etaMin != null && etaMin > 0 ? etaMin * 60 : (existing?.totalSec ?? 900);
                     const from = existing?.from ?? { x: 100, y: 1200 };
                     const control = existing?.control ?? { x: 500, y: 700 };
                     travelers[p.userId] = {
-                      userId: p.userId,
-                      status,
-                      totalSec,
-                      startedAt,
-                      from,
-                      control,
-                      lat: p.lastLat ?? undefined,
-                      lng: p.lastLng ?? undefined,
-                    };
+                                          userId: p.userId,
+                                          status,
+                                          totalSec,
+                                          distanceKm: p.distanceKm ?? undefined,
+                                          startedAt,
+                                          from,
+                                          control,
+                                          lat: p.lastLat ?? undefined,
+                                          lng: p.lastLng ?? undefined,
+                                        };
                   }
                   return {
                     live: {

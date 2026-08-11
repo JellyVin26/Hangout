@@ -151,6 +151,8 @@ export interface LiveTraveler {
   status: ArrivalStatus;
   /** Total journey duration in seconds. */
   totalSec: number;
+  /** Straight-line distance to destination in km (real GPS fix), when known. */
+  distanceKm?: number;
   /** When this traveler's journey started (epoch ms). */
   startedAt: number;
   from: { x: number; y: number };
