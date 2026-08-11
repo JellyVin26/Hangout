@@ -104,6 +104,9 @@ export default function CreateHangoutScreen() {
                   style={{
                     flexDirection: 'row',
                     alignItems: 'center',
+                    justifyContent: 'center',
+                    alignSelf: 'center',
+                    width: 292,
                     backgroundColor: p.surface,
                     borderRadius: radii.input,
                     borderWidth: 1,
@@ -114,7 +117,7 @@ export default function CreateHangoutScreen() {
                   <Picker
                     selectedValue={String(new Date(draft.at).getHours())}
                     onValueChange={(v) => setHour(Number(v))}
-                    style={{ flex: 1, height: 132, color: p.ink }}
+                    style={{ width: 92, height: 108, color: p.ink }}
                     itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
                   >
                     {Array.from({ length: 12 }, (_, i) => {
@@ -122,22 +125,22 @@ export default function CreateHangoutScreen() {
                       return <Picker.Item key={h12} label={String(h12).padStart(2, '0')} value={String(h12 === 12 ? 0 : h12)} />;
                     })}
                   </Picker>
-                  <View style={{ width: 1, height: 80, backgroundColor: p.line }} />
+                  <View style={{ width: 1, height: 64, backgroundColor: p.line }} />
                   <Picker
                     selectedValue={String(new Date(draft.at).getMinutes())}
                     onValueChange={(v) => setMinute(Number(v))}
-                    style={{ flex: 1, height: 132, color: p.ink }}
+                    style={{ width: 92, height: 108, color: p.ink }}
                     itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
                   >
                     {Array.from({ length: 60 }, (_, m) => (
                       <Picker.Item key={m} label={String(m).padStart(2, '0')} value={String(m)} />
                     ))}
                   </Picker>
-                  <View style={{ width: 1, height: 80, backgroundColor: p.line }} />
+                  <View style={{ width: 1, height: 64, backgroundColor: p.line }} />
                   <Picker
                     selectedValue={new Date(draft.at).getHours() >= 12 ? 'PM' : 'AM'}
                     onValueChange={(v) => setAmPm(v as 'AM' | 'PM')}
-                    style={{ flex: 1, height: 132, color: p.ink }}
+                    style={{ width: 92, height: 108, color: p.ink }}
                     itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
                   >
                     <Picker.Item label="AM" value="AM" />
