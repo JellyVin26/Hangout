@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { View, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatCircleDots, MapPin, CalendarBlank, Clock, Users, Images as ImagesIcon, Crown } from 'phosphor-react-native';
@@ -19,13 +20,19 @@ export default function HangoutDetailScreen() {
   const now = useNow(30000);
   const { id } = useLocalSearchParams<{ id: string }>();
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
+  const loadHangout = useApp((s) => s.loadHangout);
   const vote = useApp((s) => s.vote);
-    const rsvp = useApp((s) => s.rsvp);
-    const live = useApp((s) => s.live[id]);
+  const rsvp = useApp((s) => s.rsvp);
+  const live = useApp((s) => s.live[id]);
   const startLive = useApp((s) => s.startLive);
   const places = useApp((s) => s.places);
   const friends = useApp((s) => s.friends);
   const currentUser = useApp((s) => s.user);
+  const [rsvpBusy, setRsvpBusy] = useState<'going' | 'declined' | null>(null);
+
+  useEffect(() => {
+    if (id && !hangout) void loadHangout(id).catch(() => undefined);
+  }, [id, Boolean(hangout)]);
 
   if (!hangout) {
     return (
@@ -128,6 +135,22 @@ export default function HangoutDetailScreen() {
             ) : null}
           </View>
         </Card>
+
+        {!isHost && myRsvp === 'invited' ? (
+          <Card style={{ marginTop: space.lg, backgroundColor: p.accentSoft, borderColor: p.accent }}>
+            <View style={{ flexDirection: 'row', gap: space.md, alignItems: 'center' }}>
+              <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: p.surface, alignItems: 'center', justifyContent: 'center' }}>
+                <Ph name="EnvelopeSimple" size={22} weight="duotone" color={p.accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Ty variant="bodyStrong" color={p.accentDeep}>You are invited</Ty>
+                <Ty variant="bodySmall" color={p.inkMuted} style={{ marginTop: 2 }}>
+                  Hosted by {host.name}. Join to open the full plan, or decline to remove it from your list.
+                </Ty>
+              </View>
+            </View>
+          </Card>
+        ) : null}
 
         {/* Voting */}
         {hangout.status === 'voting' ? (
@@ -350,21 +373,37 @@ export default function HangoutDetailScreen() {
           {!isHost && myRsvp === 'invited' ? (
                       <>
                         <Button
-                          label="Decline"
+                          label={rsvpBusy === 'declined' ? 'Declining...' : 'Decline'}
                           variant="outline"
+                          disabled={rsvpBusy !== null}
                           style={{ flex: 1 }}
-                          onPress={() => {
-                            void rsvp(id, 'declined');
-                            toast('Invite declined', 'info');
+                          onPress={async () => {
+                            setRsvpBusy('declined');
+                            try {
+                              await rsvp(id, 'declined');
+                              toast('Invite declined', 'info');
+                            } catch {
+                              toast('Could not update RSVP', 'info');
+                            } finally {
+                              setRsvpBusy(null);
+                            }
                           }}
                         />
                         <Button
-                          label="Join"
+                          label={rsvpBusy === 'going' ? 'Joining...' : 'Join'}
                           icon="Check"
+                          disabled={rsvpBusy !== null}
                           style={{ flex: 2 }}
-                          onPress={() => {
-                            void rsvp(id, 'going');
-                            toast('You are in!', 'success');
+                          onPress={async () => {
+                            setRsvpBusy('going');
+                            try {
+                              await rsvp(id, 'going');
+                              toast('You are in!', 'success');
+                            } catch {
+                              toast('Could not update RSVP', 'info');
+                            } finally {
+                              setRsvpBusy(null);
+                            }
                           }}
                         />
                       </>

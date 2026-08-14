@@ -54,6 +54,7 @@ interface AppState {
 
   hangouts: Hangout[];
   createHangout: (input: CreateHangoutInput) => Promise<string>;
+  loadHangout: (hangoutId: string) => Promise<void>;
   vote: (hangoutId: string, placeId: string) => Promise<void>;
   rsvp: (hangoutId: string, status: 'going' | 'declined') => Promise<void>;
   sendMessage: (hangoutId: string, text: string) => Promise<void>;
@@ -197,6 +198,21 @@ export const useApp = create<AppState>()(
               });
               set((s) => ({ hangouts: [hangout, ...s.hangouts] }));
               return hangout.id;
+            },
+            loadHangout: async (hangoutId) => {
+              const res = await api<ApiHangout>(`/hangouts/${hangoutId}`);
+              const hangout = apiHangoutToHangout(res);
+              const destination = res.destination ? apiPlaceToPlace(res.destination) : null;
+              const users = [res.host, ...(res.participants ?? []).map((p) => p.user)].filter(Boolean).map((u) => apiUserToUser(u!));
+              set((s) => ({
+                hangouts: s.hangouts.some((h) => h.id === hangoutId)
+                  ? s.hangouts.map((h) => (h.id === hangoutId ? hangout : h))
+                  : [hangout, ...s.hangouts],
+                places: destination && !s.places.some((p) => p.id === destination.id)
+                  ? [destination, ...s.places]
+                  : s.places,
+                friends: [...users.filter((u) => u.id !== s.user?.id && !s.friends.some((f) => f.id === u.id)), ...s.friends],
+              }));
             },
             vote: async (hangoutId, placeId) => {
         await api(`/hangouts/${hangoutId}/vote`, { method: 'POST', body: { placeId } });

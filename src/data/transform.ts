@@ -252,7 +252,7 @@ export function apiNotificationToNotification(n: ApiNotification): NotificationI
     EVENT_CANCELLED: 'cancel',
     DESTINATION_FINALIZED: 'vote',
     FRIEND_REQUEST: 'friend_joined',
-    HANGOUT_INVITE: 'friend_joined',
+    HANGOUT_INVITE: 'invite',
     SYSTEM: 'system',
   };
 

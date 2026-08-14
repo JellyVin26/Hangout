@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { View, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowUpRight, CheckCircle, ChatCircleDots, Clock, Trophy, UserPlus, WarningCircle } from 'phosphor-react-native';
+import { ArrowUpRight, CheckCircle, ChatCircleDots, Clock, EnvelopeSimple, Trophy, UserPlus, WarningCircle } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
@@ -12,6 +12,8 @@ import { Ph } from '@/components/icons';
 
 const kindIcon = (kind: string) => {
   switch (kind) {
+    case 'invite':
+      return { icon: EnvelopeSimple, color: '#F0522F', bg: 'rgba(240,82,47,0.12)' };
     case 'friend_joined':
       return { icon: UserPlus, color: '#2F6FED', bg: 'rgba(47,111,237,0.12)' };
     case 'friend_declined':
@@ -83,16 +85,25 @@ export default function ActivityScreen() {
               <View style={{ gap: space.sm }}>
                 {items.map((n) => {
                   const meta = kindIcon(n.kind);
+                  const open = () => n.hangoutId && router.push(`/hangout/${n.hangoutId}`);
+                  const isInvite = n.kind === 'invite';
                   return (
-                    <View
+                    <Pressable
                       key={n.id}
-                      style={{
+                      disabled={!n.hangoutId}
+                      onPress={open}
+                      style={({ pressed }) => ({
                         flexDirection: 'row',
                         gap: space.md,
                         alignItems: 'center',
-                        paddingVertical: space.sm,
-                        opacity: n.read ? 0.62 : 1,
-                      }}
+                        paddingVertical: space.md,
+                        paddingHorizontal: isInvite ? space.md : 0,
+                        borderRadius: isInvite ? radii.card : 0,
+                        borderWidth: isInvite ? 1 : 0,
+                        borderColor: isInvite ? p.accent : 'transparent',
+                        backgroundColor: isInvite ? p.accentSoft : 'transparent',
+                        opacity: n.read ? 0.62 : pressed ? 0.86 : 1,
+                      })}
                     >
                       <View
                         style={{
@@ -123,11 +134,16 @@ export default function ActivityScreen() {
                         </Ty>
                       </View>
                       {n.hangoutId ? (
-                        <Pressable onPress={() => router.push(`/hangout/${n.hangoutId}`)} hitSlop={8}>
+                        <View style={{ alignItems: 'flex-end', gap: 4 }}>
                           <ArrowUpRight size={18} weight="bold" color={p.inkFaint} />
-                        </Pressable>
+                          {isInvite ? (
+                            <Ty variant="caption" color={p.accentDeep} style={{ fontWeight: '700' }}>
+                              View invite
+                            </Ty>
+                          ) : null}
+                        </View>
                       ) : null}
-                    </View>
+                    </Pressable>
                   );
                 })}
               </View>
