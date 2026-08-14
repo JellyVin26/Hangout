@@ -60,9 +60,12 @@ export default function HangoutDetailScreen() {
   const isLive = hangout.status !== 'archived' && hangout.at - now < 45 * 60000 && hangout.at - now > -2 * 3600000;
   const sessionLive = !!live;
   const votesFor = (placeId: string) => (hangout.votes[placeId] ?? []).length;
-  const maxVotes = Math.max(1, ...hangout.candidates.map(votesFor));
-  const totalVotes = hangout.candidates.reduce((acc, c) => acc + votesFor(c), 0);
-  const myVote = meId ? hangout.candidates.find((c) => (hangout.votes[c] ?? []).includes(meId)) : undefined;
+    const maxVotes = Math.max(1, ...hangout.candidates.map(votesFor));
+    const totalVotes = hangout.candidates.reduce((acc, c) => acc + votesFor(c), 0);
+    const myVote = meId ? hangout.candidates.find((c) => (hangout.votes[c] ?? []).includes(meId)) : undefined;
+    const votingOpen = !hangout.destinationId && now < hangout.at && hangout.candidates.length > 0;
+    const finalized = Boolean(hangout.destinationId);
+    const leaderId = hangout.candidates.reduce((best, c) => (votesFor(c) > votesFor(best) ? c : best), hangout.candidates[0] ?? '');
 
   return (
     <Screen
@@ -85,13 +88,13 @@ export default function HangoutDetailScreen() {
                 {hangout.status === 'archived' ? 'Archived' : hangout.at - now <= 0 ? 'Happening now' : countdown(hangout.at, now)}
               </Ty>
             </View>
-            {hangout.status === 'voting' ? (
-              <View style={{ backgroundColor: p.warn, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
-                <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
-                  Voting open
-                </Ty>
-              </View>
-            ) : null}
+            {votingOpen ? (
+                          <View style={{ backgroundColor: p.warn, borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
+                            <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
+                              Voting open
+                            </Ty>
+                          </View>
+                        ) : null}
             {hangout.visibility === 'public' ? (
               <View style={{ backgroundColor: 'rgba(16,12,10,0.72)', borderRadius: radii.pill, paddingHorizontal: 10, paddingVertical: 5 }}>
                 <Ty variant="caption" color="#FFFFFF" style={{ fontWeight: '700' }}>
@@ -152,11 +155,27 @@ export default function HangoutDetailScreen() {
           </Card>
         ) : null}
 
+        {finalized && dest ? (
+          <Card style={{ marginTop: space.lg, flexDirection: 'row', gap: space.md, alignItems: 'center', borderColor: p.accent, backgroundColor: p.accentSoft }}>
+            <View style={{ width: 44, height: 44, borderRadius: 16, backgroundColor: p.surface, alignItems: 'center', justifyContent: 'center' }}>
+              <Ph name="MapPinArea" size={22} weight="duotone" color={p.accent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Ty variant="bodyStrong" color={p.accentDeep}>
+                Going to {dest.name}
+              </Ty>
+              <Ty variant="bodySmall" color={p.inkMuted} style={{ marginTop: 2 }}>
+                {totalVotes > 0 ? `${totalVotes} vote${totalVotes === 1 ? '' : 's'} · final place` : 'Final place locked'}
+              </Ty>
+            </View>
+          </Card>
+        ) : null}
+
         {/* Voting */}
-        {hangout.status === 'voting' ? (
-          <View style={{ marginTop: space.xl }}>
-            <SectionHeader title="Pick the place" actionLabel={`${totalVotes} votes`} />
-            <View style={{ gap: space.md }}>
+                {votingOpen ? (
+                  <View style={{ marginTop: space.xl }}>
+                    <SectionHeader title="Pick the place" actionLabel={`${totalVotes} votes · finalizes ${countdown(hangout.at, now)}`} />
+                    <View style={{ gap: space.md }}>
               {hangout.candidates.map((candId) => {
                 const pl = places.find((item) => item.id === candId);
                 if (!pl) return null;

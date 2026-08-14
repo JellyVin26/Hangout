@@ -67,6 +67,7 @@ export interface ApiHangout {
   destination?: ApiPlace | null;
   host?: ApiUser | null;
   participants: ApiParticipant[];
+  votes?: Array<{ placeId: string; userId: string }>;
   _count?: { messages?: number; votes?: number };
 }
 
@@ -218,8 +219,11 @@ export function apiHangoutToHangout(h: ApiHangout): Hangout {
     hostId: h.hostId,
     status: statusFromTime,
     destinationId: h.destinationId ?? undefined,
-    candidates: h.destination ? [h.destinationId!] : (h.destinationId ? [h.destinationId] : []),
-    votes: {},
+    candidates: h.destination ? [h.destinationId!] : (h.votes?.length ? Array.from(new Set(h.votes.map((v) => v.placeId))) : h.destinationId ? [h.destinationId] : []),
+    votes: (h.votes ?? []).reduce<Record<string, string[]>>((acc, v) => {
+      (acc[v.placeId] ??= []).push(v.userId);
+      return acc;
+    }, {}),
     participants: finalParticipants,
     messages: [],
     photos: [],
