@@ -17,6 +17,7 @@ import type {
   User,
 } from '@/data/types';
 import { api, setToken, ApiError } from '@/lib/api';
+import { capturePostHog, identifyPostHog } from '@/lib/posthog';
 import {
   apiUserToUser,
   apiPlaceToPlace,
@@ -105,7 +106,10 @@ export const useApp = create<AppState>()(
             token: null, // no token for login
           });
           await setToken(res.token);
-          set({ user: apiUserToUser(res.user), loading: false });
+          const user = apiUserToUser(res.user);
+          identifyPostHog(user.id, { username: user.username, displayName: user.name });
+          capturePostHog('user_signed_in', { method: email && password ? 'password' : 'demo' });
+          set({ user, loading: false });
           await get().bootstrap();
         } catch (e) {
           set({ loading: false, error: e instanceof ApiError ? e.message : 'Login failed' });
@@ -122,7 +126,10 @@ export const useApp = create<AppState>()(
             token: null,
           });
           await setToken(res.token);
-          set({ user: apiUserToUser(res.user), loading: false });
+          const user = apiUserToUser(res.user);
+          identifyPostHog(user.id, { username: user.username, displayName: user.name });
+          capturePostHog('user_signed_up');
+          set({ user, loading: false });
           await get().bootstrap();
         } catch (e) {
           set({ loading: false, error: e instanceof ApiError ? e.message : 'Registration failed' });
@@ -182,11 +189,18 @@ export const useApp = create<AppState>()(
                 },
               });
               const hangout = apiHangoutToHangout(res);
+              capturePostHog('hangout_created', {
+                hangoutId: hangout.id,
+                hasDestination: Boolean(hangout.destinationId),
+                inviteeCount: input.inviteeIds.length,
+                visibility: input.visibility,
+              });
               set((s) => ({ hangouts: [hangout, ...s.hangouts] }));
               return hangout.id;
             },
             vote: async (hangoutId, placeId) => {
         await api(`/hangouts/${hangoutId}/vote`, { method: 'POST', body: { placeId } });
+        capturePostHog('place_voted', { hangoutId, placeId });
         // Optimistic: update local state
         set((s) => ({
           hangouts: s.hangouts.map((h) => {
@@ -200,6 +214,7 @@ export const useApp = create<AppState>()(
       },
       rsvp: async (hangoutId, status) => {
         await api(`/hangouts/${hangoutId}/${status === 'going' ? 'join' : 'decline'}`, { method: 'POST' });
+        capturePostHog('rsvp_changed', { hangoutId, status });
         set((s) => {
           const me = s.user;
           if (!me) return {};
@@ -231,8 +246,9 @@ export const useApp = create<AppState>()(
                 ),
               }));
               try {
-                await api(`/hangouts/${hangoutId}/messages`, { method: 'POST', body: { body: text } });
-              } catch {
+                              await api(`/hangouts/${hangoutId}/messages`, { method: 'POST', body: { body: text } });
+                              capturePostHog('message_sent', { hangoutId, kind: 'text' });
+                            } catch {
                 // mark as failed? for now leave optimistic message
               }
             },

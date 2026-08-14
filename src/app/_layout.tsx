@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useApp } from '@/store/useApp';
 import { Toaster } from '@/components/Toast';
 import { registerPushToken, onPushNotification } from '@/lib/push';
+import { initPostHog, identifyPostHog } from '@/lib/posthog';
 import { useRouter } from 'expo-router';
 
 SplashScreen.preventAutoHideAsync();
@@ -40,8 +41,12 @@ export default function RootLayout() {
   // If user is persisted (logged in), refresh data from API on app start
   useEffect(() => {
     if (fontsLoaded && user) {
+      initPostHog();
+      identifyPostHog(user.id, { username: user.username, displayName: user.name });
       bootstrap().catch(() => {/* token may be expired; user will be prompted on next action */});
       registerPushToken();
+    } else if (fontsLoaded) {
+      initPostHog();
     }
   }, [fontsLoaded, user?.id]);
 

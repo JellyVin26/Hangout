@@ -7,6 +7,10 @@
     "icon": "./assets/images/icon.png",
     "scheme": "hangout",
     "userInterfaceStyle": "automatic",
+    "extra": {
+      "posthogApiKey": "phc_demo_key_placeholder",
+      "posthogHost": "https://eu.i.posthog.com"
+    },
     "ios": {
       "icon": "./assets/expo.icon",
       "config": {
@@ -33,6 +37,7 @@
     },
     "plugins": [
       "expo-router",
+      "posthog-react-native",
       [
         "expo-location",
         {
