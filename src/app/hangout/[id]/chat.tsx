@@ -21,6 +21,8 @@ import { api } from '@/lib/api';
 import { Avatar } from '@/components/Avatar';
 import { Ty } from '@/components/Text';
 import { toast } from '@/components/Toast';
+import { Ph } from '@/components/icons';
+import { haptic } from '@/lib/haptics';
 
 export default function ChatScreen() {
   const p = usePalette();
@@ -29,6 +31,7 @@ export default function ChatScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const hangout = useApp((s) => s.hangouts.find((h) => h.id === id));
   const sendMessage = useApp((s) => s.sendMessage);
+  const sendCheckIn = useApp((s) => s.sendCheckIn);
   const refreshMessages = useApp((s) => s.refreshMessages);
   const friendsList = useApp((s) => s.friends);
   const currentUser = useApp((s) => s.user);
@@ -190,6 +193,12 @@ export default function ChatScreen() {
 
       {/* Composer */}
       <View style={[styles.composerWrap, { backgroundColor: p.bg, paddingBottom: insets.bottom + 8 }]}>
+        {/* Quick check-ins */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <QuickCheckin icon="Navigation" label="On my way" onPress={() => sendCheckIn(hangout.id, 'on_way')} />
+          <QuickCheckin icon="Clock" label="10m late" onPress={() => sendCheckIn(hangout.id, 'late')} />
+          <QuickCheckin icon="MapPinArea" label="Arrived" onPress={() => sendCheckIn(hangout.id, 'arrived')} />
+        </View>
         <View style={[styles.composer, { backgroundColor: p.surface, borderColor: p.line }]}>
           <Pressable onPress={addPhoto} hitSlop={6} style={{ padding: 6 }}>
             <Camera size={22} weight="duotone" color={p.inkMuted} />
@@ -230,3 +239,33 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
 });
+
+function QuickCheckin({ icon, label, onPress }: { icon: any; label: string; onPress: () => void }) {
+  const p = usePalette();
+  return (
+    <Pressable
+      onPress={() => {
+        haptic.light();
+        onPress();
+      }}
+      style={({ pressed }) => ({
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 9,
+        borderRadius: radii.pill,
+        backgroundColor: p.accentSoft,
+        borderWidth: 1,
+        borderColor: p.accent,
+        opacity: pressed ? 0.75 : 1,
+      })}
+    >
+      <Ph name={icon} size={14} weight="fill" color={p.accent} />
+      <Ty variant="caption" color={p.accentDeep} style={{ fontWeight: '700' }}>
+        {label}
+      </Ty>
+    </Pressable>
+  );
+}

@@ -58,6 +58,7 @@ interface AppState {
   vote: (hangoutId: string, placeId: string) => Promise<void>;
   rsvp: (hangoutId: string, status: 'going' | 'declined') => Promise<void>;
   sendMessage: (hangoutId: string, text: string) => Promise<void>;
+  sendCheckIn: (hangoutId: string, kind: 'on_way' | 'late' | 'arrived') => Promise<void>;
   refreshMessages: (hangoutId: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
   setParticipantStatus: (hangoutId: string, userId: string, status: ArrivalStatus) => void;
@@ -245,9 +246,54 @@ export const useApp = create<AppState>()(
           };
         });
       },
+      sendCheckIn: async (hangoutId, kind) => {
+        const me = get().user;
+        const myName = me?.name ?? 'Someone';
+        const labels: Record<string, string> = {
+          on_way: `${myName} is on the way! 🚗`,
+          late: `${myName} is running ~10 min late ⏳`,
+          arrived: `${myName} has arrived! 📍`,
+        };
+        const text = labels[kind] ?? `${myName} checked in`;
+        const attendanceMap: Record<string, ArrivalStatus> = {
+          on_way: 'onway',
+          late: 'late',
+          arrived: 'arrived',
+        };
+        const newStatus = attendanceMap[kind] ?? 'idle';
+
+        // Optimistic: add system message & update participant arrival status
+        const tempId = uid();
+        set((s) => ({
+          hangouts: s.hangouts.map((h) =>
+            h.id === hangoutId
+              ? {
+                  ...h,
+                  messages: [
+                    ...h.messages,
+                    { id: tempId, authorId: me?.id ?? 'me', text, at: Date.now(), kind: 'system' as const },
+                  ],
+                  participants: h.participants.map((p) =>
+                    p.userId === me?.id ? { ...p, status: newStatus } : p
+                  ),
+                }
+              : h
+          ),
+        }));
+
+        try {
+          await api(`/hangouts/${hangoutId}/messages`, {
+            method: 'POST',
+            body: { body: text, kind: 'SYSTEM' },
+          });
+          capturePostHog('checkin_sent', { hangoutId, kind });
+        } catch {
+          // optimistic message stays
+        }
+      },
       sendMessage: async (hangoutId, text) => {
-              // Optimistic update
-              const tempId = uid();
+        // Optimistic update
+        const tempId = uid();
               set((s) => ({
                 hangouts: s.hangouts.map((h) =>
                   h.id === hangoutId
