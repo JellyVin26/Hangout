@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "extra": {
       "posthogApiKey": "phc_demo_key_placeholder",
-      "posthogHost": "https://eu.i.posthog.com"
+      "posthogHost": "https://eu.i.posthog.com",
+      "router": {},
+      "eas": {
+        "projectId": "2ee29780-ebc6-4d49-a045-6f8f0f6fe531"
+      }
     },
     "ios": {
       "icon": "./assets/expo.icon",
@@ -37,7 +41,6 @@
     },
     "plugins": [
       "expo-router",
-      "posthog-react-native",
       [
         "expo-location",
         {
@@ -68,6 +71,7 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "owner": "jellyvin"
   }
 }
