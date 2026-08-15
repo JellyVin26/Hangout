@@ -178,18 +178,19 @@ export const useApp = create<AppState>()(
                 public: 'PUBLIC',
               };
               const res = await api<ApiHangout>('/hangouts', {
-                method: 'POST',
-                body: {
-                  title: input.title,
-                  description: input.description,
-                  startsAt,
-                  destinationId: input.candidates[0],
-                  visibility: visMap[input.visibility] ?? 'PRIVATE',
-                  category: input.category,
-                  maxParticipants: input.maxParticipants,
-                  inviteUserIds: input.inviteeIds,
-                },
-              });
+                              method: 'POST',
+                              body: {
+                                title: input.title,
+                                description: input.description,
+                                startsAt,
+                                destinationId: input.candidates.length === 1 ? input.candidates[0] : undefined,
+                                candidatePlaceIds: input.candidates.length > 1 ? input.candidates : undefined,
+                                visibility: visMap[input.visibility] ?? 'PRIVATE',
+                                category: input.category,
+                                maxParticipants: input.maxParticipants,
+                                inviteUserIds: input.inviteeIds,
+                              },
+                            });
               const hangout = apiHangoutToHangout(res);
               capturePostHog('hangout_created', {
                 hangoutId: hangout.id,

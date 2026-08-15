@@ -81,10 +81,10 @@ export default function PlacePickerScreen() {
     if (has) {
       draft.set({ candidateIds: draft.candidateIds.filter((c) => c !== cid) });
     } else {
-      if (draft.candidateIds.length >= 3) {
-        toast('You can vote on up to 3 places');
-        return;
-      }
+      if (draft.candidateIds.length >= 4) {
+              toast('Pick up to 4 places to vote on');
+              return;
+            }
       draft.set({ candidateIds: [...draft.candidateIds, cid] });
     }
   };
@@ -93,24 +93,24 @@ export default function PlacePickerScreen() {
     <Screen
       header={{ back: true, title: 'Pick a place' }}
       footer={
-        draft.candidateIds.length > 0 ? (
-          <Button
-            label={`Done · ${draft.candidateIds.length} selected`}
-            icon="Check"
-            fullWidth
-            size="lg"
-            onPress={() => router.push('/create/review')}
-          />
-        ) : (
-          <Button
-            label="Skip for now"
-            variant="soft"
-            fullWidth
-            size="lg"
-            onPress={() => router.push('/create/review')}
-          />
-        )
-      }
+              draft.candidateIds.length > 0 ? (
+                <Button
+                  label={`Done · ${draft.candidateIds.length} selected`}
+                  icon="Check"
+                  fullWidth
+                  size="lg"
+                  onPress={() => router.push('/create/review')}
+                />
+              ) : (
+                <Button
+                  label="Skip for now"
+                  variant="soft"
+                  fullWidth
+                  size="lg"
+                  onPress={() => router.push('/create/review')}
+                />
+              )
+            }
       contentStyle={{ paddingHorizontal: space.screen }}
     >
       {/* Search */}
