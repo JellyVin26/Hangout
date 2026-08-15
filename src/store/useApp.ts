@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { ME, SEED_BADGES, SEED_HANGOUTS, SEED_NOTIFICATIONS, buildLiveSession } from '@/data/seed';
+import { ME, SEED_BADGES, SEED_HANGOUTS, SEED_NOTIFICATIONS } from '@/data/seed';
 import { palettes } from '@/theme/tokens';
 import type {
   ArrivalStatus,
@@ -369,12 +369,37 @@ export const useApp = create<AppState>()(
       startLive: (hangoutId) => {
         set((s) => {
           if (s.live[hangoutId]) return {};
-          const session = buildLiveSession();
           const hangout = s.hangouts.find((h) => h.id === hangoutId);
-          const destination = hangout?.destinationId
-            ? s.places.find((pl) => pl.id === hangout.destinationId) ?? session.destination
-            : session.destination;
-          return { live: { ...s.live, [hangoutId]: { ...session, hangoutId, destination } } };
+          const destination =
+            (hangout?.destinationId ? s.places.find((pl) => pl.id === hangout.destinationId) : null) ??
+            ({
+              id: '',
+              name: '',
+              category: '',
+              address: '',
+              rating: 0,
+              reviewCount: 0,
+              priceLevel: 1,
+              photo: '',
+              hours: '',
+              distanceKm: 0,
+              tags: [],
+              map: { x: 0, y: 0 },
+              lat: undefined,
+              lng: undefined,
+            } satisfies Place);
+          return {
+            live: {
+              ...s.live,
+              [hangoutId]: {
+                hangoutId,
+                startedAt: Date.now(),
+                destination,
+                travelers: {},
+                me: { sharing: 'none', totalSec: 480, from: { x: 210, y: 1050 }, control: { x: 320, y: 820 } },
+              },
+            },
+          };
         });
       },
       setSharing: (hangoutId, mode) => {
@@ -427,10 +452,8 @@ export const useApp = create<AppState>()(
                   if (!session) return {};
                   const destination =
                     board.destination ? apiPlaceToPlace(board.destination, 0) : session.destination;
-                  const travelers: typeof session.travelers = { ...session.travelers };
+                  const travelers: typeof session.travelers = {};
                   for (const p of board.participants ?? []) {
-                    if (!p.lastLat || !p.lastLng) continue;
-                    const existing = travelers[p.userId];
                     const status =
                       p.attendance === 'ARRIVED'
                         ? 'arrived'
@@ -439,24 +462,21 @@ export const useApp = create<AppState>()(
                           : p.attendance === 'LATE'
                             ? 'late'
                             : 'idle';
-                    const startedAt = existing?.startedAt ?? Date.now();
                     // Real server-computed ETA (km at 5 km/h walking) when we have a GPS fix;
-                    // otherwise keep the simulated session duration.
+                    // otherwise default to a 15-min journey so the row still shows sane info.
                     const etaMin = p.etaMin ?? null;
-                    const totalSec = etaMin != null && etaMin > 0 ? etaMin * 60 : (existing?.totalSec ?? 900);
-                    const from = existing?.from ?? { x: 100, y: 1200 };
-                    const control = existing?.control ?? { x: 500, y: 700 };
+                    const totalSec = etaMin != null && etaMin > 0 ? etaMin * 60 : 900;
                     travelers[p.userId] = {
-                                          userId: p.userId,
-                                          status,
-                                          totalSec,
-                                          distanceKm: p.distanceKm ?? undefined,
-                                          startedAt,
-                                          from,
-                                          control,
-                                          lat: p.lastLat ?? undefined,
-                                          lng: p.lastLng ?? undefined,
-                                        };
+                      userId: p.userId,
+                      status,
+                      totalSec,
+                      distanceKm: p.distanceKm ?? undefined,
+                      startedAt: Date.now(),
+                      from: { x: 100, y: 1200 },
+                      control: { x: 500, y: 700 },
+                      lat: p.lastLat ?? undefined,
+                      lng: p.lastLng ?? undefined,
+                    };
                   }
                   return {
                     live: {

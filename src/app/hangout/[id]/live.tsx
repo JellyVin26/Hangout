@@ -30,11 +30,16 @@ export default function LiveScreen() {
   const startLive = useApp((s) => s.startLive);
     const setSharing = useApp((s) => s.setSharing);
     const refreshLiveBoard = useApp((s) => s.refreshLiveBoard);
-    const friendsList = useApp((s) => s.friends);
+    const places = useApp((s) => s.places);
+  const friendsList = useApp((s) => s.friends);
     const currentUser = useApp((s) => s.user);
   const userById = (uid: string) => {
     if (currentUser?.id === uid) return currentUser;
-    return friendsList.find((u) => u.id === uid) ?? { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+    const friend = friendsList.find((u) => u.id === uid);
+    if (friend) return friend;
+    const hp = hangout?.participants.find((pp) => pp.userId === uid)?.user;
+    if (hp) return { id: hp.id, name: hp.name, username: hp.username, initials: hp.initials, color: hp.color, interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
+    return { id: uid, name: 'User', username: 'user', color: '#F0522F', initials: 'U', interests: [], badgeIds: [], hangoutCount: 0, placeCount: 0, friendIds: [] };
   };
   const [promptVisible, setPromptVisible] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -115,7 +120,9 @@ export default function LiveScreen() {
     );
   }
 
-  const dest = live.destination;
+  const dest =
+    live.destination ??
+    (hangout.destinationId ? places.find((pl) => pl.id === hangout.destinationId) ?? null : null);
   const me = live.me;
   const travelers = Object.entries(live.travelers)
     .map(([uid, t]) => ({ user: userById(uid), t }))
@@ -171,7 +178,7 @@ export default function LiveScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}>
         {/* Map */}
                 <View style={{ paddingHorizontal: space.screen }}>
-                  {dest.lat != null && dest.lng != null ? (
+                  {dest && dest.lat != null && dest.lng != null ? (
                     <RealMap
                       destination={{ lat: dest.lat, lng: dest.lng, name: dest.name }}
                       height={320}
@@ -215,7 +222,7 @@ export default function LiveScreen() {
           />
           <SummaryCard
             label="To destination"
-            value={myDistance != null ? `${myDistance.toFixed(1)}` : dest.distanceKm.toFixed(1)}
+            value={myDistance != null ? `${myDistance.toFixed(1)}` : dest && dest.distanceKm != null ? dest.distanceKm.toFixed(1) : '—'}
             suffix="km"
             color={p.ink}
             icon={<Ph name="MapPin" size={18} weight="fill" color={p.ink} />}
@@ -322,12 +329,12 @@ export default function LiveScreen() {
                       </View>
                       <Ty variant="caption" faint style={{ marginTop: 3, fontSize: 10 }}>
                         {t.status === 'arrived'
-                          ? 'Arrived at ' + dest.name
+                          ? 'Arrived at ' + (dest?.name ?? 'destination')
                           : t.status === 'late'
                             ? `Running late · ${remainingMin} min to go`
                             : t.distanceKm != null
-                              ? `${t.distanceKm.toFixed(1)} km · ${etaLabel(remainingMin)} to ${dest.name}`
-                              : `${etaLabel(remainingMin)} to ${dest.name}`}
+                              ? `${t.distanceKm.toFixed(1)} km · ${etaLabel(remainingMin)} to ${dest?.name ?? 'destination'}`
+                              : `${etaLabel(remainingMin)} to ${dest?.name ?? 'destination'}`}
                       </Ty>
                     </View>
                   </View>

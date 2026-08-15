@@ -191,6 +191,15 @@ export function apiParticipantToParticipant(p: ApiParticipant): Participant {
     role: 'member',
     rsvp: p.status === 'JOINED' ? 'going' : p.status === 'DECLINED' ? 'declined' : p.status === 'MAYBE' ? 'maybe' : 'invited',
     status: statusMap[p.attendance] ?? 'idle',
+    user: p.user
+      ? {
+          id: p.user.id,
+          name: p.user.displayName || p.user.username,
+          username: p.user.username,
+          initials: (p.user.displayName || p.user.username).split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?',
+          color: '#F0522F',
+        }
+      : undefined,
   };
 }
 

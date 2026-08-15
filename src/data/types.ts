@@ -64,6 +64,7 @@ export interface Participant {
   rsvp: 'going' | 'maybe' | 'declined' | 'invited';
   /** Arrival-coordination status. Only meaningful once the session is live. */
   status: ArrivalStatus;
+  user?: { id: string; name: string; username: string; initials: string; color: string };
 }
 
 export type HangoutStatus = 'voting' | 'confirmed' | 'live' | 'archived';
