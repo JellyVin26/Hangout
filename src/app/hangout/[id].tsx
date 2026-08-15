@@ -31,10 +31,10 @@ export default function HangoutDetailScreen() {
   const [rsvpBusy, setRsvpBusy] = useState<'going' | 'declined' | null>(null);
 
   useEffect(() => {
-    if (id && !hangout) void loadHangout(id).catch(() => undefined);
-  }, [id, Boolean(hangout)]);
+      if (id && !hangout) void loadHangout(id).catch(() => undefined);
+    }, [id, Boolean(hangout)]);
 
-  if (!hangout) {
+    if (!hangout) {
     return (
       <Screen header={{ back: true }}>
         <EmptyState
@@ -58,6 +58,15 @@ export default function HangoutDetailScreen() {
   const myRsvp = invitedMe?.rsvp ?? 'invited';
   const isHost = meId ? hangout.hostId === meId : false;
   const isLive = hangout.status !== 'archived' && hangout.at - now < 45 * 60000 && hangout.at - now > -2 * 3600000;
+
+  // Poll while live so arrival statuses + vote counts stay fresh
+  useEffect(() => {
+    if (!isLive) return;
+    const t = setInterval(() => {
+      loadHangout(id).catch(() => undefined);
+    }, 10000);
+    return () => clearInterval(t);
+  }, [id, isLive]);
   const sessionLive = !!live;
   const votesFor = (placeId: string) => (hangout.votes[placeId] ?? []).length;
     const maxVotes = Math.max(1, ...hangout.candidates.map(votesFor));
@@ -353,8 +362,22 @@ export default function HangoutDetailScreen() {
                       ) : null}
                     </View>
                     <Ty variant="bodySmall" muted>
-                      {pp.rsvp === 'maybe' ? 'Maybe' : pp.rsvp === 'declined' ? 'Declined' : pp.rsvp === 'invited' ? 'Invited' : isLive ? 'Going' : 'Going'}
-                    </Ty>
+                                          {isLive
+                                            ? pp.status === 'arrived'
+                                              ? 'Arrived'
+                                              : pp.status === 'onway'
+                                                ? 'On the way'
+                                                : pp.status === 'late'
+                                                  ? 'Running late'
+                                                  : 'Going'
+                                            : pp.rsvp === 'maybe'
+                                              ? 'Maybe'
+                                              : pp.rsvp === 'declined'
+                                                ? 'Declined'
+                                                : pp.rsvp === 'invited'
+                                                  ? 'Invited'
+                                                  : 'Going'}
+                                        </Ty>
                   </View>
                   {isLive ? <StatusPill status={pp.status} compact /> : null}
                 </View>
