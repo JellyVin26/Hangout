@@ -89,6 +89,7 @@ export default function RootLayout() {
           <Stack.Screen name="hangout/[id]" />
           <Stack.Screen name="hangout/[id]/chat" />
           <Stack.Screen name="hangout/[id]/live" options={{ presentation: 'fullScreenModal' }} />
+          <Stack.Screen name="hangout/[id]/addplace" options={{ presentation: 'modal' }} />
           <Stack.Screen name="hangout/[id]/memories" />
           <Stack.Screen name="create/index" options={{ presentation: 'modal' }} />
           <Stack.Screen name="create/place" options={{ presentation: 'modal' }} />

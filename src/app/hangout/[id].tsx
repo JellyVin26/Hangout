@@ -208,10 +208,21 @@ export default function HangoutDetailScreen() {
         ) : null}
 
         {/* Voting */}
-                {votingOpen ? (
+                {!hangout.destinationId && now < hangout.at ? (
                   <View style={{ marginTop: space.xl }}>
-                    <SectionHeader title="Pick the place" actionLabel={`${totalVotes} votes · finalizes ${countdown(hangout.at, now)}`} />
+                    <SectionHeader title={hangout.candidates.length > 0 ? 'Pick the place' : 'Choose a place'} actionLabel={hangout.candidates.length > 0 ? `${totalVotes} votes · finalizes ${countdown(hangout.at, now)}` : undefined} />
                     <View style={{ gap: space.md }}>
+              {hangout.candidates.length === 0 ? (
+                <Card onPress={() => router.push(`/hangout/${id}/addplace`)} style={{ alignItems: 'center', paddingVertical: space.xl, borderStyle: 'dashed', borderWidth: 1.5, borderColor: p.line }}>
+                  <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: p.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: space.sm }}>
+                    <Ph name="MapPin" size={24} weight="duotone" color={p.accent} />
+                  </View>
+                  <Ty variant="bodyStrong">Add places to vote on</Ty>
+                  <Ty variant="bodySmall" muted center style={{ marginTop: 2, maxWidth: 230 }}>
+                    No destination picked yet. Search places and add 2+ so the group can vote before it starts.
+                  </Ty>
+                </Card>
+              ) : null}
               {hangout.candidates.map((candId) => {
                 const pl = places.find((item) => item.id === candId);
                 if (!pl) return null;
@@ -274,6 +285,12 @@ export default function HangoutDetailScreen() {
                   </Pressable>
                 );
               })}
+              <Button
+                label={hangout.candidates.length >= 1 ? 'Add another place' : 'Add a place'}
+                variant="soft"
+                icon="Plus"
+                onPress={() => router.push(`/hangout/${id}/addplace`)}
+              />
             </View>
           </View>
         ) : null}

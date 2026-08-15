@@ -107,7 +107,7 @@ export default function PlacePickerScreen() {
                   variant="soft"
                   fullWidth
                   size="lg"
-                  onPress={() => router.push('/create/review')}
+                  onPress={() => router.push('/create/invite')}
                 />
               )
             }
