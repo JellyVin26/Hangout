@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Image, Pressable, ScrollView, StyleSheet } from 'react-native';
+import { View, Image, Pressable, ScrollView, StyleSheet, Share } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChatCircleDots, MapPin, CalendarBlank, Clock, Users, Images as ImagesIcon, Crown } from 'phosphor-react-native';
 import { radii, space } from '@/theme/tokens';
@@ -67,11 +67,27 @@ export default function HangoutDetailScreen() {
     const finalized = Boolean(hangout.destinationId);
     const leaderId = hangout.candidates.reduce((best, c) => (votesFor(c) > votesFor(best) ? c : best), hangout.candidates[0] ?? '');
 
-  return (
-    <Screen
-      header={{ back: true, transparent: true }}
-      contentStyle={{ paddingBottom: 140, paddingHorizontal: 0 }}
-    >
+  const shareLink = async () => {
+      try {
+        await Share.share({ message: `Join my hangout "${hangout.title}": hangout://hangout/${hangout.id}` });
+      } catch {
+        /* dismissed */
+      }
+    };
+
+    return (
+          <Screen
+            header={{
+              back: true,
+              transparent: true,
+              right: (
+                <Pressable onPress={shareLink} hitSlop={10} style={{ padding: 6 }}>
+                  <Ph name="PaperPlaneTilt" size={20} weight="bold" color="#FFFFFF" />
+                </Pressable>
+              ),
+            }}
+            contentStyle={{ paddingBottom: 140, paddingHorizontal: 0 }}
+          >
       {/* Hero */}
       <View style={{ height: 230, backgroundColor: p.surfaceAlt }}>
         {dest ? (

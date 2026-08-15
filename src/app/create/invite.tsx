@@ -7,6 +7,7 @@ import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
 import { useDraft } from '@/store/useDraft';
 import { api } from '@/lib/api';
+import { toast } from '@/components/Toast';
 import { Screen } from '@/components/Screen';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -167,12 +168,15 @@ export default function InviteScreen() {
                                       })}
                               </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.xl }}>
-        <Ph name="QrCode" size={16} weight="duotone" color={p.inkFaint} />
-        <Ty variant="bodySmall" muted>
-          Or share the invite link with your group
-        </Ty>
-      </View>
+      <Pressable
+              onPress={() => toast('After creating, share the hangout from its page — friends open the link and join instantly.')}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.xl }}
+            >
+              <Ph name="QrCode" size={16} weight="duotone" color={p.inkFaint} />
+              <Ty variant="bodySmall" muted>
+                Or share the invite link with your group
+              </Ty>
+            </Pressable>
     </Screen>
   );
 }
