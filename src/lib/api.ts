@@ -62,5 +62,11 @@ export async function api<T = any>(
       detail?.message || (typeof detail === 'string' ? detail : `Request failed (${res.status})`);
     throw new ApiError(Array.isArray(msg) ? msg.join(', ') : msg, res.status, detail);
   }
-  return (await res.json()) as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    return text as unknown as T;
+  }
 }
