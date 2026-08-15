@@ -99,7 +99,7 @@ export default function PlacePickerScreen() {
                   icon="Check"
                   fullWidth
                   size="lg"
-                  onPress={() => router.push('/create/review')}
+                  onPress={() => router.push('/create/invite')}
                 />
               ) : (
                 <Button
