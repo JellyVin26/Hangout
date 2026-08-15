@@ -32,7 +32,7 @@ export async function registerPushToken() {
     const token = (await Notifications.getExpoPushTokenAsync()).data;
     await api('/notifications/push-token', {
       method: 'POST',
-      body: JSON.stringify({ token, platform: Platform.OS }),
+      body: { token, platform: Platform.OS },
     });
     tokenRegistered = true;
   } catch (e) {
