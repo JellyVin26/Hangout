@@ -31,8 +31,8 @@ export default function HangoutDetailScreen() {
   const [rsvpBusy, setRsvpBusy] = useState<'going' | 'declined' | null>(null);
 
   useEffect(() => {
-      if (id && !hangout) void loadHangout(id).catch(() => undefined);
-    }, [id, Boolean(hangout)]);
+    if (id) void loadHangout(id).catch(() => undefined);
+  }, [id]);
 
     if (!hangout) {
     return (
@@ -140,7 +140,18 @@ export default function HangoutDetailScreen() {
           <View style={{ gap: 10 }}>
             <MetaRow icon="CalendarBlank" text={`${fmtDay(hangout.at)} at ${fmtTime(hangout.at)}`} />
             <MetaRow icon="Clock" text={`${fmtDuration(hangout.durationMin)}`} />
-            <MetaRow icon="MapPin" text={dest ? `${dest.name}, ${dest.address}` : `${hangout.candidates.length} places to vote on`} />
+            <MetaRow
+              icon="MapPin"
+              text={
+                dest
+                  ? `${dest.name}, ${dest.address}`
+                  : hangout.destinationId
+                    ? 'Destination set'
+                    : hangout.candidates.length > 0
+                      ? `${hangout.candidates.length} places to vote on`
+                      : 'No destination yet'
+              }
+            />
             <MetaRow icon="Users" text={`${going.length} going${hangout.maxParticipants ? ` of ${hangout.maxParticipants}` : ''}`} />
           </View>
           {hangout.description ? (

@@ -198,7 +198,15 @@ export const useApp = create<AppState>()(
                 inviteeCount: input.inviteeIds.length,
                 visibility: input.visibility,
               });
-              set((s) => ({ hangouts: [hangout, ...s.hangouts] }));
+              set((s) => {
+                const destination = res.destination ? apiPlaceToPlace(res.destination) : null;
+                return {
+                  hangouts: [hangout, ...s.hangouts],
+                  places: destination && !s.places.some((p) => p.id === destination.id)
+                    ? [destination, ...s.places]
+                    : s.places,
+                };
+              });
               return hangout.id;
             },
             loadHangout: async (hangoutId) => {
