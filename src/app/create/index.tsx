@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
 import { useRouter } from 'expo-router';
@@ -16,19 +15,12 @@ import { Button, IconButton } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { Ty } from '@/components/Text';
 import { Ph } from '@/components/icons';
-
-const DAYS = [
-  { label: 'Today', value: '0' },
-  { label: 'Tomorrow', value: '1' },
-  { label: 'Sat', value: '2' },
-  { label: 'Sun', value: '3' },
-];
+import { CalendarPicker } from '@/components/CalendarPicker';
 
 export default function CreateHangoutScreen() {
   const p = usePalette();
   const router = useRouter();
   const draft = useDraft();
-  const [dayOffset, setDayOffset] = useState(1);
 
   const setHour = (h12: number) => {
     const cur = new Date(draft.at);
@@ -50,10 +42,8 @@ export default function CreateHangoutScreen() {
     }
     draft.set({ at: cur.getTime() });
   };
-  const setDay = (offset: number) => {
-    setDayOffset(offset);
-    draft.set({ at: atDayOffset(offset, new Date(draft.at).getHours(), new Date(draft.at).getMinutes()) });
-  };
+  const h24 = new Date(draft.at).getHours();
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
 
   const canContinue = draft.title.trim().length > 0 && (draft.candidateIds.length > 0 || true);
 
@@ -96,7 +86,7 @@ export default function CreateHangoutScreen() {
         When
       </Ty>
       <Field label="Day">
-        <ChipRow options={DAYS} value={`${dayOffset}`} onChange={(v) => setDay(Number(v))} />
+        <CalendarPicker at={draft.at} onSelect={(ts) => draft.set({ at: ts })} />
       </Field>
       <View style={{ gap: space.md }}>
               <Field label="Start time">
@@ -115,34 +105,34 @@ export default function CreateHangoutScreen() {
                   }}
                 >
                   <Picker
-                    selectedValue={String(new Date(draft.at).getHours())}
+                    selectedValue={String(h12 === 12 ? 0 : h12)}
                     onValueChange={(v) => setHour(Number(v))}
-                    style={{ width: 92, height: 108, color: p.ink }}
+                    style={{ width: 92, height: 132, color: p.ink }}
                     itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
                   >
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const h12 = i + 1;
-                      return <Picker.Item key={h12} label={String(h12).padStart(2, '0')} value={String(h12 === 12 ? 0 : h12)} />;
-                    })}
-                  </Picker>
-                  <View style={{ width: 1, height: 64, backgroundColor: p.line }} />
-                  <Picker
-                    selectedValue={String(new Date(draft.at).getMinutes())}
-                    onValueChange={(v) => setMinute(Number(v))}
-                    style={{ width: 92, height: 108, color: p.ink }}
-                    itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
-                  >
-                    {Array.from({ length: 60 }, (_, m) => (
-                      <Picker.Item key={m} label={String(m).padStart(2, '0')} value={String(m)} />
-                    ))}
-                  </Picker>
-                  <View style={{ width: 1, height: 64, backgroundColor: p.line }} />
-                  <Picker
-                    selectedValue={new Date(draft.at).getHours() >= 12 ? 'PM' : 'AM'}
-                    onValueChange={(v) => setAmPm(v as 'AM' | 'PM')}
-                    style={{ width: 92, height: 108, color: p.ink }}
-                    itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
-                  >
+                                      {Array.from({ length: 12 }, (_, i) => {
+                                        const hv = i + 1;
+                                        return <Picker.Item key={hv} label={String(hv).padStart(2, '0')} value={String(hv === 12 ? 0 : hv)} />;
+                                      })}
+                                    </Picker>
+                                    <View style={{ width: 1, height: 64, backgroundColor: p.line }} />
+                                    <Picker
+                                      selectedValue={String(new Date(draft.at).getMinutes())}
+                                      onValueChange={(v) => setMinute(Number(v))}
+                                      style={{ width: 92, height: 132, color: p.ink }}
+                                      itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
+                                    >
+                                      {Array.from({ length: 60 }, (_, m) => (
+                                        <Picker.Item key={m} label={String(m).padStart(2, '0')} value={String(m)} />
+                                      ))}
+                                    </Picker>
+                                    <View style={{ width: 1, height: 64, backgroundColor: p.line }} />
+                                    <Picker
+                                      selectedValue={new Date(draft.at).getHours() >= 12 ? 'PM' : 'AM'}
+                                      onValueChange={(v) => setAmPm(v as 'AM' | 'PM')}
+                                      style={{ width: 92, height: 132, color: p.ink }}
+                                      itemStyle={{ fontFamily: 'Sora_500Medium', fontSize: 18 }}
+                                    >
                     <Picker.Item label="AM" value="AM" />
                     <Picker.Item label="PM" value="PM" />
                   </Picker>
