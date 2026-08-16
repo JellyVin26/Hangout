@@ -55,12 +55,18 @@ export function Avatar({ name, color, initials, size = 44, uri, status, style }:
       ]}
     >
       {uri ? (
-        <Image source={{ uri }} style={{ width: size, height: size }} />
+        <Image source={{ uri }} style={{ width: size, height: size }} resizeMode="cover" />
       ) : (
         <Ty
           variant="bodyStrong"
           color="#FFFFFF"
-          style={{ fontSize: Math.max(11, size * 0.36), letterSpacing: 0.2 }}
+          style={{
+            fontSize: Math.max(11, size * 0.36),
+            letterSpacing: 0.2,
+            lineHeight: Math.round(Math.max(11, size * 0.36) * 1.25),
+            includeFontPadding: false,
+            textAlign: 'center',
+          }}
         >
           {initials ?? ''}
         </Ty>
