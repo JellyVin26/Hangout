@@ -77,6 +77,16 @@ interface AppState {
   badges: Badge[];
   places: Place[];
   friends: User[];
+  friendRequests: { incoming: FriendRequest[]; outgoing: FriendRequest[] };
+  refreshFriends: () => Promise<void>;
+  sendFriendRequest: (userId: string) => Promise<void>;
+  respondFriendRequest: (requestId: string, accept: boolean) => Promise<void>;
+}
+
+export interface FriendRequest {
+  id: string;
+  user: User;
+  createdAt: number;
 }
 
 let idCounter = 100;
@@ -141,7 +151,7 @@ export const useApp = create<AppState>()(
 
       signOut: async () => {
         await setToken(null);
-        set({ user: null, hangouts: [], places: [], friends: [], notifications: [], unreadCount: 0 });
+        set({ user: null, hangouts: [], places: [], friends: [], friendRequests: { incoming: [], outgoing: [] }, notifications: [], unreadCount: 0 });
       },
 
       bootstrap: async () => {
@@ -164,9 +174,43 @@ export const useApp = create<AppState>()(
             unreadCount: notifRes.unreadCount ?? 0,
             loading: false,
           });
+          void get().refreshFriends();
         } catch (e) {
           set({ loading: false, error: e instanceof ApiError ? e.message : 'Failed to load data' });
         }
+      },
+
+      refreshFriends: async () => {
+        try {
+          const [friendsRes, reqs] = await Promise.all([
+            api<any[]>('/friends'),
+            api<{ incoming: any[]; outgoing: any[] }>('/friends/requests'),
+          ]);
+          const incoming = (reqs.incoming ?? []).map((r) => ({
+            id: r.id,
+            createdAt: Date.parse(r.createdAt ?? '') || Date.now(),
+            user: apiFriendToUser(r.user),
+          }));
+          const outgoing = (reqs.outgoing ?? []).map((r) => ({
+            id: r.id,
+            createdAt: Date.parse(r.createdAt ?? '') || Date.now(),
+            user: apiFriendToUser(r.user),
+          }));
+          set({
+            friends: friendsRes.map(apiFriendToUser),
+            friendRequests: { incoming, outgoing },
+          });
+        } catch {
+          // offline ok
+        }
+      },
+      sendFriendRequest: async (userId) => {
+        await api('/friends/requests', { method: 'POST', body: { userId } });
+        await get().refreshFriends();
+      },
+      respondFriendRequest: async (requestId, accept) => {
+        await api(`/friends/requests/${requestId}/${accept ? 'accept' : 'decline'}`, { method: 'POST' });
+        await get().refreshFriends();
       },
 
       hangouts: SEED_HANGOUTS,
@@ -538,6 +582,7 @@ export const useApp = create<AppState>()(
       badges: SEED_BADGES,
       places: [],
       friends: [],
+      friendRequests: { incoming: [], outgoing: [] },
     }),
     {
       name: 'hangout-storage',

@@ -84,17 +84,29 @@ export default function ProfileScreen() {
 
       {/* Friends */}
       <View style={{ marginTop: space.xl }}>
-        <SectionHeader title={`Friends (${friends.length})`} actionLabel="Add friends" onAction={() => {}} />
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.lg }}>
-          {friends.map((f) => (
-            <View key={f.id} style={{ alignItems: 'center', gap: 6, width: 64 }}>
-              <Avatar name={f.name} color={f.color} initials={f.initials} size={52} />
-              <Ty variant="caption" style={{ fontSize: 11, textAlign: 'center' }} numberOfLines={1}>
-                {f.name.split(' ')[0]}
-              </Ty>
+        <SectionHeader title={`Friends (${friends.length})`} actionLabel="Add friends" onAction={() => router.push('/friends')} />
+        {friends.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.lg }}>
+            {friends.map((f) => (
+              <View key={f.id} style={{ alignItems: 'center', gap: 6, width: 64 }}>
+                <Avatar name={f.name} color={f.color} initials={f.initials} size={52} />
+                <Ty variant="caption" style={{ fontSize: 11, textAlign: 'center' }} numberOfLines={1}>
+                  {f.name.split(' ')[0]}
+                </Ty>
+              </View>
+            ))}
+          </ScrollView>
+        ) : (
+          <Card onPress={() => router.push('/friends')} style={{ alignItems: 'center', paddingVertical: space.xl, borderStyle: 'dashed', borderWidth: 1.5, borderColor: p.line }}>
+            <View style={{ width: 52, height: 52, borderRadius: 18, backgroundColor: p.accentSoft, alignItems: 'center', justifyContent: 'center', marginBottom: space.sm }}>
+              <Ph name="UserPlus" size={24} weight="duotone" color={p.accent} />
             </View>
-          ))}
-        </ScrollView>
+            <Ty variant="bodyStrong">Add friends</Ty>
+            <Ty variant="bodySmall" muted center style={{ marginTop: 2, maxWidth: 230 }}>
+              Find people by username or scan a code. Friends see each other's plans first.
+            </Ty>
+          </Card>
+        )}
       </View>
 
       {/* Settings */}
@@ -116,8 +128,9 @@ export default function ProfileScreen() {
           <ListRow
             icon={<Ph name="QrCode" size={20} weight="duotone" color={p.accent} />}
             title="Add friends"
-            subtitle="Scan a QR code to add a friend"
+            subtitle="Search by username or scan a QR code"
             right={<Ph name="ArrowUpRight" size={18} weight="bold" color={p.inkFaint} />}
+            onPress={() => router.push('/friends')}
           />
           <ListRow
             icon={<Ph name="ShieldCheck" size={20} weight="duotone" color={p.accent} />}
