@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Check, MagnifyingGlass } from 'phosphor-react-native';
+import { Check, MagnifyingGlass, QrCode } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
@@ -13,6 +13,7 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Ty } from '@/components/Text';
 import { Ph } from '@/components/icons';
+import { QrSheet } from '@/components/QrSheet';
 
 interface RemoteUser {
   id: string;
@@ -27,6 +28,7 @@ export default function InviteScreen() {
   const p = usePalette();
   const router = useRouter();
   const draft = useDraft();
+  const [showQr, setShowQr] = useState(false);
   const friends = useApp((s) => s.friends);
   const currentUser = useApp((s) => s.user);
   const [query, setQuery] = useState('');
@@ -169,14 +171,21 @@ export default function InviteScreen() {
                               </View>
 
       <Pressable
-              onPress={() => toast('After creating, share the hangout from its page — friends open the link and join instantly.')}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.xl }}
-            >
-              <Ph name="QrCode" size={16} weight="duotone" color={p.inkFaint} />
-              <Ty variant="bodySmall" muted>
-                Or share the invite link with your group
-              </Ty>
-            </Pressable>
-    </Screen>
-  );
-}
+                    onPress={() => setShowQr(true)}
+                    style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: space.xl }}
+                  >
+                    <Ph name="QrCode" size={16} weight="duotone" color={p.inkFaint} />
+                    <Ty variant="bodySmall" muted>
+                      Or share the invite code — friends scan to join
+                    </Ty>
+                  </Pressable>
+            <QrSheet
+              visible={showQr}
+              onClose={() => setShowQr(false)}
+              value="hangout://create"
+              title="Invite your group"
+              subtitle="Friends scan this to open the create flow and join your plan."
+            />
+          </Screen>
+        );
+      }

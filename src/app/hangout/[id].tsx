@@ -13,6 +13,7 @@ import { Button, IconButton } from '@/components/Button';
 import { Ty } from '@/components/Text';
 import { Ph } from '@/components/icons';
 import { toast } from '@/components/Toast';
+import { QrSheet } from '@/components/QrSheet';
 
 export default function HangoutDetailScreen() {
   const p = usePalette();
@@ -76,6 +77,8 @@ export default function HangoutDetailScreen() {
     const finalized = Boolean(hangout.destinationId);
     const leaderId = hangout.candidates.reduce((best, c) => (votesFor(c) > votesFor(best) ? c : best), hangout.candidates[0] ?? '');
 
+  const [showQr, setShowQr] = useState(false);
+
   const shareLink = async () => {
       try {
         await Share.share({ message: `Join my hangout "${hangout.title}": hangout://hangout/${hangout.id}` });
@@ -90,9 +93,14 @@ export default function HangoutDetailScreen() {
               back: true,
               transparent: true,
               right: (
-                <Pressable onPress={shareLink} hitSlop={10} style={{ padding: 6 }}>
-                  <Ph name="PaperPlaneTilt" size={20} weight="bold" color="#FFFFFF" />
-                </Pressable>
+                <View style={{ flexDirection: 'row' }}>
+                  <Pressable onPress={() => setShowQr(true)} hitSlop={10} style={{ padding: 6 }}>
+                    <Ph name="QrCode" size={20} weight="bold" color="#FFFFFF" />
+                  </Pressable>
+                  <Pressable onPress={shareLink} hitSlop={10} style={{ padding: 6 }}>
+                    <Ph name="PaperPlaneTilt" size={20} weight="bold" color="#FFFFFF" />
+                  </Pressable>
+                </View>
               ),
             }}
             contentStyle={{ paddingBottom: 140, paddingHorizontal: 0 }}
@@ -519,6 +527,13 @@ export default function HangoutDetailScreen() {
           )}
         </View>
       </View>
+      <QrSheet
+        visible={showQr}
+        onClose={() => setShowQr(false)}
+        value={`hangout://hangout/${hangout.id}`}
+        title="Invite to hangout"
+        subtitle="Friends scan this to open the hangout and join."
+      />
     </Screen>
   );
 }
