@@ -1,9 +1,11 @@
-import { Image, ScrollView, View } from 'react-native';
+import { Image, Linking, ScrollView, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Clock, MapPin, Star, Wallet } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
+import { atDayOffset } from '@/lib/format';
 import { useApp, usePalette } from '@/store/useApp';
+import { useDraft } from '@/store/useDraft';
 import { Screen } from '@/components/Screen';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
@@ -14,6 +16,7 @@ import { toast } from '@/components/Toast';
 export default function PlaceDetailScreen() {
   const p = usePalette();
   const router = useRouter();
+  const draft = useDraft();
   const { id } = useLocalSearchParams<{ id: string }>();
   const places = useApp((s) => s.places);
   const friends = useApp((s) => s.friends);
@@ -41,9 +44,22 @@ export default function PlaceDetailScreen() {
     { by: 'u_aisha', text: 'Busy on weekends, quiet on weekday mornings. Get the seasonal special.', rating: 4 },
   ];
 
-  return (
-    <Screen
-      header={{ back: true, transparent: true }}
+  const planHere = () => {
+      draft.set({ candidateIds: [place.id], title: '', at: atDayOffset(1, 19, 0) });
+      router.push('/create' as never);
+    };
+
+    const directions = () => {
+      const url =
+        place.lat != null && place.lng != null
+          ? `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + place.address)}`;
+      Linking.openURL(url).catch(() => toast('Could not open Maps', 'info'));
+    };
+
+    return (
+      <Screen
+        header={{ back: true, transparent: true }}
       contentStyle={{ paddingHorizontal: 0, paddingBottom: 140 }}
     >
       <Image source={{ uri: place.photo }} style={{ width: '100%', height: 240, backgroundColor: p.surfaceAlt }} />
@@ -68,7 +84,7 @@ export default function PlaceDetailScreen() {
                 </Ty>
               </View>
             </View>
-            <Button label="Plan here" icon="Plus" size="sm" onPress={() => toast('Opens the create flow')} />
+            <Button label="Plan here" icon="Plus" size="sm" onPress={planHere} />
           </View>
 
           <View style={{ gap: 8, marginTop: space.lg }}>
@@ -142,8 +158,8 @@ export default function PlaceDetailScreen() {
       {/* Footer */}
       <View style={{ position: 'absolute', left: 16, right: 16, bottom: 0 }}>
         <View style={{ flexDirection: 'row', gap: space.sm, backgroundColor: p.bg, paddingTop: space.md, paddingBottom: space.lg, borderTopWidth: 1, borderTopColor: p.line }}>
-          <Button label="Directions" variant="outline" icon="Navigation" style={{ flex: 1 }} onPress={() => toast('Opening Google Maps')} />
-          <Button label="Plan a hangout here" icon="Plus" style={{ flex: 2 }} onPress={() => toast('Opens the create flow')} />
+          <Button label="Directions" variant="outline" icon="Navigation" style={{ flex: 1 }} onPress={directions} />
+                    <Button label="Plan a hangout here" icon="Plus" style={{ flex: 2 }} onPress={planHere} />
         </View>
       </View>
     </Screen>

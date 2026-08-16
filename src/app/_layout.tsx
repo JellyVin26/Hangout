@@ -97,7 +97,8 @@ export default function RootLayout() {
           <Stack.Screen name="create/review" options={{ presentation: 'modal' }} />
           <Stack.Screen name="place/[id]" options={{ presentation: 'modal' }} />
           <Stack.Screen name="badges" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="friends" options={{ presentation: 'modal' }} />
+                    <Stack.Screen name="friends" options={{ presentation: 'modal' }} />
+                    <Stack.Screen name="hangouts" />
         </Stack>
         <Toaster />
       </ThemeProvider>
