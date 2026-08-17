@@ -15,6 +15,7 @@ import type {
   Place,
   SharingMode,
   User,
+  MemoryItem,
 } from '@/data/types';
 import { api, setToken, ApiError } from '@/lib/api';
 import { capturePostHog, identifyPostHog } from '@/lib/posthog';
@@ -63,6 +64,10 @@ interface AppState {
   sendCheckIn: (hangoutId: string, kind: 'on_way' | 'late' | 'arrived') => Promise<void>;
   refreshMessages: (hangoutId: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
+  memories: Record<string, MemoryItem[]>;
+  loadMemories: (hangoutId: string) => Promise<void>;
+  toggleMemoryLike: (hangoutId: string, memoryId: string) => Promise<void>;
+  addMemory: (hangoutId: string, url: string, caption?: string) => Promise<void>;
   setParticipantStatus: (hangoutId: string, userId: string, status: ArrivalStatus) => void;
 
   live: Record<string, LiveSession>;
@@ -153,7 +158,7 @@ export const useApp = create<AppState>()(
 
       signOut: async () => {
         await setToken(null);
-        set({ user: null, hangouts: [], places: [], friends: [], friendRequests: { incoming: [], outgoing: [] }, notifications: [], unreadCount: 0 });
+        set({ user: null, hangouts: [], places: [], friends: [], friendRequests: { incoming: [], outgoing: [] }, notifications: [], unreadCount: 0, memories: {} });
       },
 
       bootstrap: async () => {
@@ -414,7 +419,50 @@ export const useApp = create<AppState>()(
                       const res = await api("/users/me", { method: "POST", body: patch }) as { displayName: string; bio: string | null };
                       set((s) => ({ user: s.user ? { ...s.user, name: res.displayName, bio: res.bio ?? undefined } : null }));
                     },
-                    setParticipantStatus: (hangoutId, userId, status) => {
+                    loadMemories: async (hangoutId) => {
+        try {
+          const res = (await api(`/hangouts/${hangoutId}/memories`)) as any[];
+          const meId = get().user?.id;
+          const mapped: MemoryItem[] = res.map((m: any) => ({
+            id: m.id,
+            url: m.url,
+            caption: m.caption,
+            kind: m.kind,
+            by: m.authorId,
+            at: Date.parse(m.createdAt) || Date.now(),
+            likes: m._count?.reactions ?? 0,
+            liked: false,
+            authorName: m.author?.displayName,
+            authorAvatarUrl: m.author?.avatarUrl,
+          }));
+          set((s) => ({ memories: { ...s.memories, [hangoutId]: mapped } }));
+        } catch { /* offline ok */ }
+      },
+      toggleMemoryLike: async (hangoutId, memoryId) => {
+        // optimistic
+        set((s) => {
+          const list = s.memories[hangoutId] ?? [];
+          return { memories: { ...s.memories, [hangoutId]: list.map((m) => m.id === memoryId ? { ...m, liked: !m.liked, likes: m.liked ? m.likes - 1 : m.likes + 1 } : m) } };
+        });
+        try {
+          const res = (await api(`/memories/${memoryId}/like`, { method: 'POST' })) as { liked: boolean };
+          set((s) => {
+            const list = s.memories[hangoutId] ?? [];
+            return { memories: { ...s.memories, [hangoutId]: list.map((m) => m.id === memoryId ? { ...m, liked: res.liked, likes: res.liked ? m.likes + 1 : m.likes - 1 } : m) } };
+          });
+        } catch { /* rollback on next load */ }
+      },
+      addMemory: async (hangoutId, url, caption) => {
+        try {
+          const res = (await api(`/hangouts/${hangoutId}/memories`, { method: 'POST', body: { url, caption, kind: 'PHOTO' } })) as any;
+          const meId = get().user?.id;
+          set((s) => {
+            const list = s.memories[hangoutId] ?? [];
+            return { memories: { ...s.memories, [hangoutId]: [{ id: res.id, url: res.url, caption: res.caption, kind: res.kind, by: meId ?? '', at: Date.now(), likes: 0, liked: false, authorName: get().user?.name }, ...list] } };
+          });
+        } catch { /* silent */ }
+      },
+      setParticipantStatus: (hangoutId, userId, status) => {
         set((s) => ({
           hangouts: s.hangouts.map((h) =>
             h.id === hangoutId
@@ -594,6 +642,7 @@ export const useApp = create<AppState>()(
       badges: SEED_BADGES,
       places: [],
       friends: [],
+      memories: {},
       friendRequests: { incoming: [], outgoing: [] },
     }),
     {

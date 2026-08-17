@@ -25,6 +25,7 @@ export default function HangoutDetailScreen() {
   const vote = useApp((s) => s.vote);
   const rsvp = useApp((s) => s.rsvp);
   const live = useApp((s) => s.live[id]);
+  const memories = useApp((s) => s.memories[id] ?? []);
   const startLive = useApp((s) => s.startLive);
   const places = useApp((s) => s.places);
   const friends = useApp((s) => s.friends);
@@ -428,14 +429,14 @@ export default function HangoutDetailScreen() {
           <Card style={{ flexDirection: 'row', gap: space.sm }}>
             <MiniStat icon="ChatCircleDots" label="Messages" value={`${hangout.messages.length}`} />
             <MiniStat icon="MapPin" label="Places" value={`${hangout.candidates.length}`} />
-            <MiniStat icon="Images" label="Photos" value={`${hangout.photos.length}`} />
+            <MiniStat icon="Images" label="Photos" value={`${memories.length}`} />
           </Card>
         </View>
 
         {/* Memories */}
         {hangout.status === 'archived' ? (
           <View style={{ marginTop: space.xl }}>
-            <SectionHeader title="Memories" actionLabel={`${hangout.photos.length} photos`} />
+            <SectionHeader title="Memories" actionLabel={`${memories.length} photos`} />
             {hangout.photos.length > 0 ? (
               <Card onPress={() => router.push(`/hangout/${id}/memories`)} padded={false} style={{ overflow: 'hidden' }}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>

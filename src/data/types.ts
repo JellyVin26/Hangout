@@ -96,6 +96,19 @@ export interface Photo {
   likes: number;
 }
 
+export interface MemoryItem {
+  id: string;
+  url: string;
+  caption?: string;
+  kind: string;
+  by: string;
+  at: number;
+  likes: number;
+  liked: boolean;
+  authorName?: string;
+  authorAvatarUrl?: string | null;
+}
+
 export interface Hangout {
   id: string;
   title: string;
