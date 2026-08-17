@@ -178,7 +178,7 @@ export default function FriendsScreen() {
                 paddingVertical: space.md, borderBottomWidth: 1, borderBottomColor: p.line,
               }}
             >
-              <Avatar name={f.name} color={f.color} initials={f.initials} size={44} />
+              <Avatar name={f.name} color={f.color} initials={f.initials} size={44} uri={f.avatarUrl ?? undefined} />
               <View style={{ flex: 1 }}>
                 <Ty variant="bodyStrong">{f.name}</Ty>
                 <Ty variant="bodySmall" muted>@{f.username}{f.bio ? ` · ${f.bio}` : ''}</Ty>
@@ -203,7 +203,7 @@ export default function FriendsScreen() {
                 paddingVertical: space.md, borderBottomWidth: 1, borderBottomColor: p.line,
               }}
             >
-              <Avatar name={r.user.name} color={r.user.color} initials={r.user.initials} size={44} />
+              <Avatar name={r.user.name} color={r.user.color} initials={r.user.initials} size={44} uri={r.user.avatarUrl ?? undefined} />
               <View style={{ flex: 1 }}>
                 <Ty variant="bodyStrong">{r.user.name}</Ty>
                 <Ty variant="bodySmall" muted>@{r.user.username} wants to connect</Ty>

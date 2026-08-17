@@ -28,6 +28,7 @@ export interface User {
   name: string;
   username: string;
   bio?: string;
+  avatarUrl?: string | null;
   color: string;
   initials: string;
   interests: string[];
@@ -64,7 +65,7 @@ export interface Participant {
   rsvp: 'going' | 'maybe' | 'declined' | 'invited';
   /** Arrival-coordination status. Only meaningful once the session is live. */
   status: ArrivalStatus;
-  user?: { id: string; name: string; username: string; initials: string; color: string };
+  user?: { id: string; name: string; username: string; initials: string; color: string; avatarUrl?: string | null };
 }
 
 export type HangoutStatus = 'voting' | 'confirmed' | 'live' | 'archived';

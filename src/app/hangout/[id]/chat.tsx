@@ -155,7 +155,7 @@ export default function ChatScreen() {
               }}
             >
               {!mine ? (
-                <Avatar name={author.name} color={author.color} initials={author.initials} size={30} />
+                <Avatar name={author.name} color={author.color} initials={author.initials} size={30} uri={author.avatarUrl ?? undefined} />
               ) : null}
               <View style={{ maxWidth: '72%', alignItems: mine ? 'flex-end' : 'flex-start' }}>
                 {m.image ? (

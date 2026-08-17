@@ -306,7 +306,7 @@ export default function LiveScreen() {
               const remainingMin = Math.max(0, Math.ceil(((1 - progress) * t.totalSec) / 60));
               return (
                 <View key={user.id} style={[styles.travelerRow, { backgroundColor: p.surface, borderColor: p.line }]}>
-                  <Avatar name={user.name} color={user.color} initials={user.initials} size={40} status={t.status} />
+                  <Avatar name={user.name} color={user.color} initials={user.initials} size={40} status={t.status} uri={user.avatarUrl ?? undefined} />
                   <View style={{ flex: 1, marginLeft: space.md }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                       <Ty variant="bodyStrong" numberOfLines={1} style={{ flexShrink: 1 }}>

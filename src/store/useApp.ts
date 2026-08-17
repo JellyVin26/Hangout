@@ -58,6 +58,7 @@ interface AppState {
   vote: (hangoutId: string, placeId: string) => Promise<void>;
   rsvp: (hangoutId: string, status: 'going' | 'declined') => Promise<void>;
   sendMessage: (hangoutId: string, text: string) => Promise<void>;
+  updateMyAvatar: (base64: string, mime: string) => Promise<string>;
   sendCheckIn: (hangoutId: string, kind: 'on_way' | 'late' | 'arrived') => Promise<void>;
   refreshMessages: (hangoutId: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
@@ -345,8 +346,8 @@ export const useApp = create<AppState>()(
         }
       },
       sendMessage: async (hangoutId, text) => {
-        // Optimistic update
-        const tempId = uid();
+              // Optimistic update
+              const tempId = uid();
               set((s) => ({
                 hangouts: s.hangouts.map((h) =>
                   h.id === hangoutId
@@ -401,8 +402,14 @@ export const useApp = create<AppState>()(
                 method: 'POST',
                 body: { url: uri, kind: 'PHOTO' },
               }).catch(() => undefined);
-            },
-      setParticipantStatus: (hangoutId, userId, status) => {
+                          },
+                    updateMyAvatar: async (base64, mime) => {
+                      const upload = (await api('/uploads', { method: 'POST', body: { base64, mime, kind: 'AVATAR' } })) as { url: string };
+                      const res = (await api('/users/me', { method: 'POST', body: { avatarUrl: upload.url } })) as { avatarUrl: string };
+                      set((s) => ({ user: s.user ? { ...s.user, avatarUrl: res.avatarUrl } : null }));
+                      return res.avatarUrl;
+                    },
+                    setParticipantStatus: (hangoutId, userId, status) => {
         set((s) => ({
           hangouts: s.hangouts.map((h) =>
             h.id === hangoutId

@@ -168,7 +168,7 @@ export default function HangoutDetailScreen() {
             </Ty>
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: space.md, gap: space.sm }}>
-            <Avatar name={host.name} color={host.color} initials={host.initials} size={26} />
+            <Avatar name={host.name} color={host.color} initials={host.initials} size={26} uri={host.avatarUrl ?? undefined} />
             <Ty variant="bodySmall" muted>
               Hosted by <Ty variant="bodySmall" style={{ fontWeight: '700' }} color={p.ink}>{host.name.split(' ')[0]}</Ty>
             </Ty>
@@ -382,7 +382,7 @@ export default function HangoutDetailScreen() {
                     borderBottomColor: p.line,
                   }}
                 >
-                  <Avatar name={u.name} color={u.color} initials={u.initials} size={40} status={isLive ? pp.status : undefined} />
+                  <Avatar name={u.name} color={u.color} initials={u.initials} size={40} status={isLive ? pp.status : undefined} uri={u.avatarUrl ?? undefined} />
                   <View style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                       <Ty variant="bodyStrong" numberOfLines={1}>

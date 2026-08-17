@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Image, ScrollView, Switch, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Switch, View } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { Check, QrCode, ShieldCheck, SignOut, Moon, Sun, MapPin, CalendarCheck, Trophy } from 'phosphor-react-native';
+import { QrCode, ShieldCheck, SignOut, Moon, Sun, MapPin, CalendarCheck, Trophy, Camera } from 'phosphor-react-native';
 
 import { radii, space } from '@/theme/tokens';
 import { useApp, usePalette } from '@/store/useApp';
@@ -10,6 +11,7 @@ import { Card } from '@/components/Card';
 import { Screen, ListRow, SectionHeader } from '@/components/Screen';
 import { Ty } from '@/components/Text';
 import { Ph } from '@/components/icons';
+import { toast } from '@/components/Toast';
 
 export default function ProfileScreen() {
   const p = usePalette();
@@ -18,9 +20,34 @@ export default function ProfileScreen() {
   const badges = useApp((s) => s.badges);
   const signOut = useApp((s) => s.signOut);
   const friendsList = useApp((s) => s.friends);
+  const updateMyAvatar = useApp((s) => s.updateMyAvatar);
   const userById = (uid: string) => friendsList.find((u) => u.id === uid) ?? user;
   const { theme, toggleTheme } = useAppTheme();
   const [showQr, setShowQr] = useState(false);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+
+  const pickAvatar = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+      base64: true,
+    });
+    if (res.canceled || !res.assets?.[0]) return;
+    const asset = res.assets[0];
+    const base64 = asset.base64;
+    if (!base64) return;
+    setAvatarBusy(true);
+    try {
+      await updateMyAvatar(base64, asset.mimeType ?? 'image/jpeg');
+      toast('Avatar updated', 'success');
+    } catch {
+      toast('Upload failed', 'info');
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
 
   const friends = user.friendIds
     .map((id) => userById(id))
@@ -31,8 +58,8 @@ export default function ProfileScreen() {
     <Screen contentStyle={{ paddingHorizontal: space.screen, paddingBottom: 140 }}>
       {/* Profile card */}
       <Card style={{ alignItems: 'center', paddingVertical: space.xl, paddingHorizontal: space.xl }}>
-        <View style={{ position: 'relative' }}>
-          <Avatar name={user.name} color={user.color} initials={user.initials} size={84} />
+        <Pressable onPress={pickAvatar} style={{ position: 'relative' }} disabled={avatarBusy}>
+          <Avatar name={user.name} color={user.color} initials={user.initials} size={84} uri={user.avatarUrl ?? undefined} />
           <View
             style={{
               position: 'absolute',
@@ -48,9 +75,9 @@ export default function ProfileScreen() {
               justifyContent: 'center',
             }}
           >
-            <CheckMark />
+            {avatarBusy ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Camera size={13} weight="bold" color="#FFFFFF" />}
           </View>
-        </View>
+        </Pressable>
         <Ty variant="title2" style={{ marginTop: space.md }}>
           {user.name}
         </Ty>
@@ -89,7 +116,7 @@ export default function ProfileScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: space.lg }}>
             {friends.map((f) => (
               <View key={f.id} style={{ alignItems: 'center', gap: 6, width: 64 }}>
-                <Avatar name={f.name} color={f.color} initials={f.initials} size={52} />
+                <Avatar name={f.name} color={f.color} initials={f.initials} size={52} uri={f.avatarUrl ?? undefined} />
                 <Ty variant="caption" style={{ fontSize: 11, textAlign: 'center' }} numberOfLines={1}>
                   {f.name.split(' ')[0]}
                 </Ty>
@@ -172,9 +199,6 @@ function Stat({ label, value, icon, onPress }: { label: string; value: string; i
   );
 }
 
-function CheckMark() {
-  return <Check size={14} weight="bold" color="#FFFFFF" />;
-}
 function useAppTheme() {
   const theme = useApp((s) => s.theme);
   const toggleTheme = useApp((s) => s.toggleTheme);

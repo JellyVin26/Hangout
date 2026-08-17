@@ -126,6 +126,7 @@ export function apiUserToUser(u: ApiUser): User {
     name: u.displayName,
     username: u.username,
     bio: u.bio ?? undefined,
+    avatarUrl: u.avatarUrl ?? undefined,
     color: '#F0522F',
     initials: initials(u.displayName),
     interests: [],
@@ -198,6 +199,7 @@ export function apiParticipantToParticipant(p: ApiParticipant): Participant {
           username: p.user.username,
           initials: (p.user.displayName || p.user.username).split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('') || '?',
           color: '#F0522F',
+          avatarUrl: p.user.avatarUrl ?? undefined,
         }
       : undefined,
   };
@@ -289,6 +291,7 @@ export function apiFriendToUser(f: ApiFriend): User {
     name: f.displayName,
     username: f.username,
     bio: f.bio ?? undefined,
+    avatarUrl: f.avatarUrl ?? undefined,
     color: '#F0522F',
     initials: initials(f.displayName),
     interests: [],
