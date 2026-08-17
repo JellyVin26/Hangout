@@ -78,15 +78,17 @@ export default function ProfileScreen() {
             {avatarBusy ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Camera size={13} weight="bold" color="#FFFFFF" />}
           </View>
         </Pressable>
-        <Ty variant="title2" style={{ marginTop: space.md }}>
-          {user.name}
-        </Ty>
-        <Ty variant="bodySmall" muted>
-          @{user.username}
-        </Ty>
-        <Ty variant="bodySmall" muted center style={{ marginTop: space.sm, maxWidth: 240 }}>
-          {user.bio}
-        </Ty>
+        <Pressable onPress={() => router.push('/edit-profile' as never)}>
+          <Ty variant="title2" style={{ marginTop: space.md }}>
+            {user.name}
+          </Ty>
+          <Ty variant="bodySmall" muted>
+            @{user.username}
+          </Ty>
+          <Ty variant="bodySmall" muted center style={{ marginTop: space.sm, maxWidth: 240 }}>
+            {user.bio}
+          </Ty>
+        </Pressable>
 
         <View style={{ flexDirection: 'row', gap: space.lg, marginTop: space.xl }}>
           <Stat label="Hangouts" value={`${user.hangoutCount}`} icon="CalendarCheck" onPress={() => router.push('/hangouts')} />

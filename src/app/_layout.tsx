@@ -99,6 +99,7 @@ export default function RootLayout() {
           <Stack.Screen name="badges" options={{ presentation: 'modal' }} />
                     <Stack.Screen name="friends" options={{ presentation: 'modal' }} />
                     <Stack.Screen name="hangouts" />
+          <Stack.Screen name="edit-profile" options={{ presentation: "modal" }} />
         </Stack>
         <Toaster />
       </ThemeProvider>

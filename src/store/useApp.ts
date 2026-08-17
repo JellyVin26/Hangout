@@ -59,6 +59,7 @@ interface AppState {
   rsvp: (hangoutId: string, status: 'going' | 'declined') => Promise<void>;
   sendMessage: (hangoutId: string, text: string) => Promise<void>;
   updateMyAvatar: (base64: string, mime: string) => Promise<string>;
+  updateMyProfile: (patch: { displayName?: string; bio?: string }) => Promise<void>;
   sendCheckIn: (hangoutId: string, kind: 'on_way' | 'late' | 'arrived') => Promise<void>;
   refreshMessages: (hangoutId: string) => Promise<void>;
   addPhoto: (hangoutId: string, uri: string) => void;
@@ -408,6 +409,10 @@ export const useApp = create<AppState>()(
                       const res = (await api('/users/me', { method: 'POST', body: { avatarUrl: upload.url } })) as { avatarUrl: string };
                       set((s) => ({ user: s.user ? { ...s.user, avatarUrl: res.avatarUrl } : null }));
                       return res.avatarUrl;
+                    },
+                    updateMyProfile: async (patch) => {
+                      const res = await api("/users/me", { method: "POST", body: patch }) as { displayName: string; bio: string | null };
+                      set((s) => ({ user: s.user ? { ...s.user, name: res.displayName, bio: res.bio ?? undefined } : null }));
                     },
                     setParticipantStatus: (hangoutId, userId, status) => {
         set((s) => ({

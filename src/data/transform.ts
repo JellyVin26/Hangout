@@ -26,6 +26,8 @@ export interface ApiUser {
   displayName: string;
   bio?: string | null;
   avatarUrl?: string | null;
+  _count?: { hangoutsJoined?: number; favoritePlaces?: number };
+  badges?: { badge?: { key: string } }[];
 }
 
 export interface ApiPlace {
@@ -130,9 +132,9 @@ export function apiUserToUser(u: ApiUser): User {
     color: '#F0522F',
     initials: initials(u.displayName),
     interests: [],
-    badgeIds: [],
-    hangoutCount: 0,
-    placeCount: 0,
+    badgeIds: u.badges?.map((b) => b.badge?.key ?? '').filter(Boolean) ?? [],
+    hangoutCount: u._count?.hangoutsJoined ?? 0,
+    placeCount: u._count?.favoritePlaces ?? 0,
     friendIds: [],
   };
 }

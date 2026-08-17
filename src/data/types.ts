@@ -29,6 +29,7 @@ export interface User {
   username: string;
   bio?: string;
   avatarUrl?: string | null;
+  _count?: { hangoutsJoined?: number; favoritePlaces?: number };
   color: string;
   initials: string;
   interests: string[];
