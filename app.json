@@ -22,6 +22,7 @@
       }
     },
     "android": {
+      "package": "app.hangout.mobile",
       "adaptiveIcon": {
         "backgroundColor": "#F0522F",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
