@@ -1,0 +1,21 @@
+name: Deploy web
+on:
+  push:
+    branches: [main]
+    paths: ['package.json', 'app.json', 'app.config.js', 'src/**', '.github/workflows/deploy-web.yml']
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci --no-audit --no-fund
+      - run: npx expo export --platform web
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
